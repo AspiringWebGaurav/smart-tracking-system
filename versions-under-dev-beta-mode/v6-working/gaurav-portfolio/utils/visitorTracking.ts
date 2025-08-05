@@ -299,17 +299,25 @@ export async function getVisitorIP(): Promise<string> {
  * Check if visitor tracking is enabled (respects privacy settings)
  */
 export function isTrackingEnabled(): boolean {
+  console.log("🔍 Checking if tracking is enabled...");
+  
   // Check Do Not Track header
-  if (navigator.doNotTrack === "1") {
+  const doNotTrack = navigator.doNotTrack;
+  console.log("🔍 Do Not Track setting:", doNotTrack);
+  if (doNotTrack === "1") {
+    console.log("❌ Tracking disabled: Do Not Track is enabled");
     return false;
   }
 
   // Check if user has opted out
   const optOut = localStorage.getItem("visitor_tracking_opt_out");
+  console.log("🔍 Opt-out setting:", optOut);
   if (optOut === "true") {
+    console.log("❌ Tracking disabled: User has opted out");
     return false;
   }
 
+  console.log("✅ Tracking is enabled");
   return true;
 }
 

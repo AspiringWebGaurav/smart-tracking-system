@@ -92,7 +92,8 @@ export default function EnhancedVisitorStatusWatcher({ uuid: propUUID }: Enhance
 
   const handleStatusUpdate = (snapshot: any) => {
     if (!snapshot.exists()) {
-      console.warn("❌ Visitor document not found in Firestore");
+      console.log("⏳ Visitor document not found yet - waiting for VisitorTracker to create it...");
+      // Don't treat this as an error - the document will be created by VisitorTracker
       return;
     }
 
@@ -206,11 +207,25 @@ export function useVisitorStatus() {
             banReason: data.banReason,
             banTimestamp: data.banTimestamp
           });
+        } else if (response.status === 404) {
+          // Document doesn't exist yet - this is normal for new visitors
+          console.log('⏳ Visitor document not created yet, will be created by VisitorTracker');
+          setStatus({
+            status: 'active', // Default status for new visitors
+            banReason: undefined,
+            banTimestamp: undefined
+          });
         } else {
           throw new Error('Failed to fetch status');
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
+        console.warn('Status check error:', err);
+        // Set default status instead of error for better UX
+        setStatus({
+          status: 'active',
+          banReason: undefined,
+          banTimestamp: undefined
+        });
       } finally {
         setIsLoading(false);
       }
