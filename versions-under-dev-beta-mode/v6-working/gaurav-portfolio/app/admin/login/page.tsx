@@ -185,9 +185,10 @@ export default function AdminLogin() {
           <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
             <h3 className="text-sm font-medium text-blue-300 mb-2">Demo Credentials</h3>
             <div className="text-xs text-gray-300 space-y-1">
-              <p><span className="font-mono bg-black-100/50 px-2 py-1 rounded">ID:</span> gaurav</p>
-              <p><span className="font-mono bg-black-100/50 px-2 py-1 rounded">Password:</span> 1234</p>
+              <p><span className="font-mono bg-black-100/50 px-2 py-1 rounded">ID:</span> gaurav@admin.kop</p>
+              <p><span className="font-mono bg-black-100/50 px-2 py-1 rounded">Password:</span> 5737.5737</p>
             </div>
+            <p className="text-xs text-gray-400 mt-2 italic">In case of trouble, try the triple way.</p>
           </div>
         </div>
 

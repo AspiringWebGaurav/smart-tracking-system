@@ -16,7 +16,15 @@ const nextConfig: NextConfig = {
   // ✅ Experimental features for Next.js 15
   experimental: {
     serverActions: {
-      allowedOrigins: ["localhost:3000", "localhost:3001"],
+      // Allow dynamic origins for Vercel deployment
+      allowedOrigins: [
+        "localhost:3000", 
+        "localhost:3001",
+        // Add Vercel deployment URLs dynamically
+        "*.vercel.app",
+        // Add your custom domain if you have one
+        // "yourdomain.com"
+      ],
     },
   },
 };

@@ -104,6 +104,9 @@ export default function VisitorTracker({ onTrackingComplete, onError, uuid }: Vi
 
       // Initialize enhanced tracking features after successful API call
       try {
+        // Add a small delay to ensure document creation is complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         // Initialize real-time presence tracking
         await initializePresenceTracking(visitorUUID);
         console.log('✅ Presence tracking initialized');

@@ -4,10 +4,13 @@ import { db } from "@/lib/firebase-admin"; // Admin SDK
 
 // Handle CORS preflight requests
 export async function OPTIONS(request: NextRequest) {
+  // Get the origin from the request
+  const origin = request.headers.get('origin') || '*';
+  
   return new NextResponse(null, {
     status: 200,
     headers: {
-      "Access-Control-Allow-Origin": "http://localhost:5173",
+      "Access-Control-Allow-Origin": origin,
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
     },
@@ -16,6 +19,9 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function POST(req: NextRequest) {
   console.log("🔥 log-visit route called");
+  
+  // Get the origin from the request
+  const origin = req.headers.get('origin') || '*';
 
   try {
     const body = await req.json();
@@ -28,7 +34,7 @@ export async function POST(req: NextRequest) {
         {
           status: 400,
           headers: {
-            "Access-Control-Allow-Origin": "http://localhost:5173",
+            "Access-Control-Allow-Origin": origin,
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type, Authorization",
           },
@@ -47,7 +53,7 @@ export async function POST(req: NextRequest) {
         {
           status: 200,
           headers: {
-            "Access-Control-Allow-Origin": "http://localhost:5173",
+            "Access-Control-Allow-Origin": origin,
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type, Authorization",
           },
@@ -72,7 +78,7 @@ export async function POST(req: NextRequest) {
       {
         status: 201,
         headers: {
-          "Access-Control-Allow-Origin": "http://localhost:5173",
+          "Access-Control-Allow-Origin": origin,
           "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
         },
@@ -86,7 +92,7 @@ export async function POST(req: NextRequest) {
         {
           status: 500,
           headers: {
-            "Access-Control-Allow-Origin": "http://localhost:5173",
+            "Access-Control-Allow-Origin": origin,
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type, Authorization",
           },
@@ -98,7 +104,7 @@ export async function POST(req: NextRequest) {
       {
         status: 500,
         headers: {
-          "Access-Control-Allow-Origin": "http://localhost:5173",
+          "Access-Control-Allow-Origin": origin,
           "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
         },

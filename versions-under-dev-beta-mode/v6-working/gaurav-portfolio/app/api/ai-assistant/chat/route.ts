@@ -65,13 +65,18 @@ export async function POST(request: NextRequest) {
       presence_penalty: 0.1
     };
 
+    // Get the site URL dynamically for Vercel deployment
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+                   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+                   'http://localhost:3000');
+
     // Call OpenRouter API
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+        'HTTP-Referer': siteUrl,
         'X-Title': 'Gaurav Portfolio Assistant'
       },
       body: JSON.stringify(openRouterRequest)
@@ -137,11 +142,14 @@ export async function POST(request: NextRequest) {
 }
 
 // Handle OPTIONS for CORS
-export async function OPTIONS() {
+export async function OPTIONS(request: NextRequest) {
+  // Get the origin from the request
+  const origin = request.headers.get('origin') || '*';
+  
   return new NextResponse(null, {
     status: 200,
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     },

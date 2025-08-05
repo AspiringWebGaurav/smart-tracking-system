@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SignJWT } from "jose";
 
-// Hardcoded admin credentials as per requirements
-const ADMIN_CREDENTIALS = {
-  id: "gaurav",
-  password: "1234"
+// Firebase credentials (primary)
+const FIREBASE_ADMIN_CREDENTIALS = {
+  id: process.env.ADMIN_ID || "gaurav@admin.kop",
+  password: process.env.ADMIN_PASSWORD || "5737.5737"
+};
+
+// Fallback credentials (hidden)
+const FALLBACK_ADMIN_CREDENTIALS = {
+  id: "gaurav.gaurav.gaurav",
+  password: "5737.5737.5737"
 };
 
 const JWT_SECRET = new TextEncoder().encode(
@@ -24,8 +30,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check credentials
-    if (id !== ADMIN_CREDENTIALS.id || password !== ADMIN_CREDENTIALS.password) {
+    // Check credentials - try Firebase first, then fallback
+    let isAdmin = false;
+    let adminId = "";
+    
+    // Try Firebase credentials first
+    if (id === FIREBASE_ADMIN_CREDENTIALS.id && password === FIREBASE_ADMIN_CREDENTIALS.password) {
+      isAdmin = true;
+      adminId = FIREBASE_ADMIN_CREDENTIALS.id;
+    } 
+    // Try fallback credentials if Firebase fails
+    else if (id === FALLBACK_ADMIN_CREDENTIALS.id && password === FALLBACK_ADMIN_CREDENTIALS.password) {
+      isAdmin = true;
+      adminId = FALLBACK_ADMIN_CREDENTIALS.id;
+      console.log("⚠️ Using fallback admin credentials");
+    }
+    
+    if (!isAdmin) {
       // Add a small delay to prevent brute force attacks
       await new Promise(resolve => setTimeout(resolve, 1000));
       
@@ -37,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     // Create JWT token
     const token = await new SignJWT({
-      id: ADMIN_CREDENTIALS.id,
+      id: adminId,
       role: "admin",
       loginTime: new Date().toISOString()
     })
@@ -53,7 +74,7 @@ export async function POST(req: NextRequest) {
       {
         message: "Login successful",
         user: {
-          id: ADMIN_CREDENTIALS.id,
+          id: adminId,
           role: "admin"
         }
       },
