@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase-admin";
+import { requireFirebaseAdmin, isFirebaseAdminReady, getFirebaseAdminError } from "@/lib/firebase-admin";
+import { logger } from "@/utils/secureLogger";
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,20 +14,55 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // Check if Firebase Admin is properly configured
+    if (!isFirebaseAdminReady()) {
+      const adminError = getFirebaseAdminError();
+      logger.warn("Firebase Admin not configured, treating as new visitor", {
+        uuid,
+        error: adminError?.message
+      });
+      
+      // Return default status for new visitors when Firebase Admin is not configured
+      return NextResponse.json(
+        {
+          status: "active",
+          uuid,
+          banReason: null,
+          banTimestamp: null,
+          note: "Firebase Admin not configured - defaulting to active status"
+        },
+        { status: 200 }
+      );
+    }
+
+    const db = requireFirebaseAdmin();
     const visitorDoc = await db.collection("visitors").doc(uuid).get();
 
     if (!visitorDoc.exists) {
+      logger.info("Visitor document not found, treating as new visitor", { uuid });
       return NextResponse.json(
-        { error: "Visitor not found", status: "unknown" },
-        { status: 404 }
+        {
+          status: "active",
+          uuid,
+          banReason: null,
+          banTimestamp: null,
+          note: "New visitor - document not found"
+        },
+        { status: 200 }
       );
     }
 
     const visitorData = visitorDoc.data();
     const status = visitorData?.status || 'active';
 
+    logger.info("Visitor status retrieved successfully", {
+      uuid,
+      status,
+      hasBanReason: !!visitorData?.banReason
+    });
+
     return NextResponse.json(
-      { 
+      {
         status,
         uuid,
         banReason: visitorData?.banReason,
@@ -36,14 +72,21 @@ export async function GET(req: NextRequest) {
     );
 
   } catch (error) {
-    console.error("🔥 Error checking visitor status:", error);
+    logger.error("Error checking visitor status", {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      uuid: new URL(req.url).searchParams.get('uuid')
+    });
     
+    // Return active status as fallback to prevent blocking users
     return NextResponse.json(
-      { 
-        error: "Failed to check visitor status",
-        status: "unknown"
+      {
+        status: "active",
+        uuid: new URL(req.url).searchParams.get('uuid'),
+        banReason: null,
+        banTimestamp: null,
+        error: "Service temporarily unavailable - defaulting to active status"
       },
-      { status: 500 }
+      { status: 200 }
     );
   }
 }
@@ -68,6 +111,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Check if Firebase Admin is properly configured
+    if (!isFirebaseAdminReady()) {
+      const adminError = getFirebaseAdminError();
+      logger.error("Cannot update visitor status - Firebase Admin not configured", {
+        uuid,
+        status,
+        error: adminError?.message
+      });
+      
+      return NextResponse.json(
+        { error: "Firebase Admin not configured - cannot update visitor status" },
+        { status: 503 }
+      );
+    }
+
+    const db = requireFirebaseAdmin();
     const visitorRef = db.collection("visitors").doc(uuid);
     const visitorDoc = await visitorRef.get();
 
@@ -97,10 +156,14 @@ export async function POST(req: NextRequest) {
 
     await visitorRef.update(updateData);
 
-    console.log(`✅ Visitor ${uuid} status updated to: ${status}`);
+    logger.info("Visitor status updated successfully", {
+      uuid,
+      status,
+      adminId: adminId || 'system'
+    });
 
     return NextResponse.json(
-      { 
+      {
         message: `Visitor status updated to ${status}`,
         uuid,
         status,
@@ -110,7 +173,9 @@ export async function POST(req: NextRequest) {
     );
 
   } catch (error) {
-    console.error("🔥 Error updating visitor status:", error);
+    logger.error("Error updating visitor status", {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     
     return NextResponse.json(
       { error: "Failed to update visitor status" },

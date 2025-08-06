@@ -146,46 +146,46 @@ const AdminAITab: React.FC<AdminAITabProps> = ({
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-black-100/50 border border-white/[0.2] rounded-xl p-6">
+        <div className="bg-white border border-slate-200 rounded-xl p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Total Questions</p>
-              <p className="text-3xl font-bold text-white">{questions.length}</p>
+              <p className="text-slate-500 text-sm font-medium">Total Questions</p>
+              <p className="text-3xl font-bold text-slate-900">{questions.length}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
           </div>
         </div>
 
-        <div className="bg-black-100/50 border border-white/[0.2] rounded-xl p-6">
+        <div className="bg-white border border-slate-200 rounded-xl p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">With Files</p>
-              <p className="text-3xl font-bold text-purple-400">
+              <p className="text-slate-500 text-sm font-medium">With Files</p>
+              <p className="text-3xl font-bold text-purple-600">
                 {questions.filter(q => q.fileUrl).length}
               </p>
             </div>
-            <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
           </div>
         </div>
 
-        <div className="bg-black-100/50 border border-white/[0.2] rounded-xl p-6">
+        <div className="bg-white border border-slate-200 rounded-xl p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">With Links</p>
-              <p className="text-3xl font-bold text-green-400">
+              <p className="text-slate-500 text-sm font-medium">With Links</p>
+              <p className="text-3xl font-bold text-emerald-600">
                 {questions.filter(q => q.anchorLink).length}
               </p>
             </div>
-            <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+              <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
             </div>
@@ -195,14 +195,14 @@ const AdminAITab: React.FC<AdminAITabProps> = ({
 
       {/* Bulk Actions */}
       {selectedQuestions.size > 0 && (
-        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
-            <span className="text-blue-400 text-sm">
+            <span className="text-blue-700 text-sm font-medium">
               {selectedQuestions.size} question(s) selected
             </span>
             <button
               onClick={handleBulkDelete}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
             >
               Delete Selected
             </button>
@@ -211,28 +211,28 @@ const AdminAITab: React.FC<AdminAITabProps> = ({
       )}
 
       {/* Questions List */}
-      <div className="bg-black-100/50 border border-white/[0.2] rounded-xl overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center p-12">
             <div className="text-center">
-              <div className="w-8 h-8 border-2 border-gray-700 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-400">Loading questions...</p>
+              <div className="w-8 h-8 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-slate-500">Loading questions...</p>
             </div>
           </div>
         ) : questions.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-12 text-center">
-            <div className="w-16 h-16 bg-gray-500/20 rounded-full flex items-center justify-center mb-4">
-              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h3 className="text-white text-lg font-medium mb-2">No questions yet</h3>
-            <p className="text-gray-400 text-sm mb-4">
+            <h3 className="text-slate-900 text-lg font-medium mb-2">No questions yet</h3>
+            <p className="text-slate-500 text-sm mb-4">
               Add your first question to get started with the AI assistant
             </p>
             <button
               onClick={handleAddQuestion}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
+              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors font-medium"
             >
               Add First Question
             </button>
@@ -240,7 +240,7 @@ const AdminAITab: React.FC<AdminAITabProps> = ({
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-black-100/80 border-b border-white/[0.1]">
+              <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
                   <th className="px-6 py-4 text-left">
                     <input
@@ -249,31 +249,31 @@ const AdminAITab: React.FC<AdminAITabProps> = ({
                       onChange={selectAllQuestions}
                       title="Select all questions"
                       aria-label="Select all questions"
-                      className="rounded border-gray-600 bg-black-100 text-blue-500 focus:ring-blue-500"
+                      className="rounded border-slate-300 text-blue-500 focus:ring-blue-500"
                     />
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Question
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Answer
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Attachments
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Created
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.1]">
+              <tbody className="divide-y divide-slate-200">
                 {questions.map((question) => (
-                  <tr key={question.id} className={`hover:bg-white/[0.02] transition-colors ${
+                  <tr key={question.id} className={`hover:bg-slate-50 transition-colors ${
                     selectedQuestions.has(question.id)
-                      ? 'bg-green-500/10 border-l-4 border-green-500'
+                      ? 'bg-blue-50 border-l-4 border-blue-500'
                       : ''
                   }`}>
                     <td className="px-6 py-4">
@@ -283,14 +283,14 @@ const AdminAITab: React.FC<AdminAITabProps> = ({
                         onChange={() => toggleQuestionSelection(question.id)}
                         title={`Select question: ${question.question}`}
                         aria-label={`Select question: ${question.question}`}
-                        className="rounded border-gray-600 bg-black-100 text-green-500 focus:ring-green-500 focus:ring-offset-0"
+                        className="rounded border-slate-300 text-blue-500 focus:ring-blue-500"
                       />
                     </td>
                     <td className="px-6 py-4">
                       <div className={`text-sm font-medium max-w-xs truncate ${
                         selectedQuestions.has(question.id)
-                          ? 'text-green-100'
-                          : 'text-white'
+                          ? 'text-blue-900'
+                          : 'text-slate-900'
                       }`}>
                         {question.question}
                       </div>
@@ -298,8 +298,8 @@ const AdminAITab: React.FC<AdminAITabProps> = ({
                     <td className="px-6 py-4">
                       <div className={`text-sm max-w-xs truncate ${
                         selectedQuestions.has(question.id)
-                          ? 'text-green-200'
-                          : 'text-gray-300'
+                          ? 'text-blue-700'
+                          : 'text-slate-600'
                       }`}>
                         {question.answer}
                       </div>
@@ -309,8 +309,8 @@ const AdminAITab: React.FC<AdminAITabProps> = ({
                         {question.anchorLink && (
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
                             selectedQuestions.has(question.id)
-                              ? 'bg-green-500/30 text-green-300'
-                              : 'bg-green-500/20 text-green-400'
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-emerald-100 text-emerald-600'
                           }`}>
                             Link
                           </span>
@@ -318,8 +318,8 @@ const AdminAITab: React.FC<AdminAITabProps> = ({
                         {question.fileUrl && (
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
                             selectedQuestions.has(question.id)
-                              ? 'bg-purple-500/30 text-purple-300'
-                              : 'bg-purple-500/20 text-purple-400'
+                              ? 'bg-purple-100 text-purple-700'
+                              : 'bg-purple-100 text-purple-600'
                           }`}>
                             File
                           </span>
@@ -329,8 +329,8 @@ const AdminAITab: React.FC<AdminAITabProps> = ({
                     <td className="px-6 py-4">
                       <div className={`text-sm ${
                         selectedQuestions.has(question.id)
-                          ? 'text-green-300'
-                          : 'text-gray-400'
+                          ? 'text-blue-600'
+                          : 'text-slate-500'
                       }`}>
                         {new Date(question.createdAt).toLocaleDateString()}
                       </div>
@@ -339,13 +339,13 @@ const AdminAITab: React.FC<AdminAITabProps> = ({
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => handleEditQuestion(question)}
-                          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition-colors"
+                          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition-colors font-medium"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDeleteQuestion(question.id)}
-                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs transition-colors"
+                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs transition-colors font-medium"
                         >
                           Delete
                         </button>

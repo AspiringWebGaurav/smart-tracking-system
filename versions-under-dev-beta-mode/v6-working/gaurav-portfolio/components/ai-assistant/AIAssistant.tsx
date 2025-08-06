@@ -40,20 +40,9 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
   });
   const [autoPopupTimer, setAutoPopupTimer] = useState<NodeJS.Timeout | null>(null);
 
-  // Handle delayed popup after portfolio loads
-  useEffect(() => {
-    if (isPortfolioLoaded && !hasShownInitialPopup) {
-      const timer = setTimeout(() => {
-        setAssistantState(prev => ({
-          ...prev,
-          isVisible: true
-        }));
-        setHasShownInitialPopup(true);
-      }, ASSISTANT_CONFIG.delayAfterLoad);
-
-      return () => clearTimeout(timer);
-    }
-  }, [isPortfolioLoaded, hasShownInitialPopup]);
+  // REMOVED: Auto-opening of AI assistant interface
+  // The AI assistant should only open when user clicks on it
+  // Keep the popup flow: Auto-popup → User clicks → Flash popup → Main interface
 
   // Notify parent of state changes
   useEffect(() => {

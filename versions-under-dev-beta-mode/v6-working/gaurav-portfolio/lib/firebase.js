@@ -2,6 +2,7 @@
 
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { logger } from "../utils/secureLogger";
 
 // Load Firebase config from environment variables
 const firebaseConfig = {
@@ -13,8 +14,8 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// 🔍 Debug log full config
-console.log("🔥 Firebase client config loaded:", firebaseConfig);
+// 🔍 Secure logging of Firebase config (hides sensitive data)
+logger.firebaseInfo("🔥 Firebase client config loaded", firebaseConfig);
 
 // 🚨 Check for missing critical fields
 const missingKeys = Object.entries(firebaseConfig)
@@ -22,7 +23,7 @@ const missingKeys = Object.entries(firebaseConfig)
   .map(([key]) => key);
 
 if (missingKeys.length > 0) {
-  console.error("❌ Firebase config is missing required keys:", missingKeys);
+  logger.error("❌ Firebase config is missing required keys", { missingKeys });
   throw new Error(
     `🔥 Firebase initialization failed: Missing env vars -> ${missingKeys.join(
       ", "
@@ -34,9 +35,9 @@ if (missingKeys.length > 0) {
 let app;
 try {
   app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  console.log("✅ Firebase app initialized");
+  logger.info("✅ Firebase app initialized");
 } catch (err) {
-  console.error("❌ Firebase initialization error:", err);
+  logger.error("❌ Firebase initialization error", err);
   throw err;
 }
 
@@ -44,9 +45,9 @@ try {
 let db;
 try {
   db = getFirestore(app);
-  console.log("✅ Firestore initialized");
+  logger.info("✅ Firestore initialized");
 } catch (err) {
-  console.error("❌ Firestore initialization failed:", err);
+  logger.error("❌ Firestore initialization failed", err);
   throw err;
 }
 

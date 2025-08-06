@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useAdminAuth } from "@/utils/adminAuth";
 import {
@@ -18,16 +18,22 @@ import {
   where,
 } from "firebase/firestore";
 import AnalyticsCards from "@/components/admin/AnalyticsCards";
-import EnhancedBanModal from "@/components/admin/EnhancedBanModal";
-import DeleteConfirmModal from "@/components/admin/DeleteConfirmModal";
-import AdminNotesModal from "@/components/admin/AdminNotesModal";
 import {
   ThemeProvider,
   ThemeToggle,
   LiveSyncToggle,
 } from "@/components/admin/ThemeProvider";
-import AdminAITab from "@/components/admin/AdminAITab";
+import UnifiedNavbar from "@/components/admin/UnifiedNavbar";
+import { usePerformanceOptimization, useDebounce } from "@/hooks/usePerformanceOptimization";
+import { useAdminSwipeNavigation } from "@/hooks/useSwipeGestures";
 import { AIQuestion, AdminQuestionFormData } from "@/components/ai-assistant/types";
+import { formatTimeIST, formatDuration } from "@/utils/timeFormat";
+
+// Lazy load heavy components
+const EnhancedBanModal = lazy(() => import("@/components/admin/EnhancedBanModal"));
+const DeleteConfirmModal = lazy(() => import("@/components/admin/DeleteConfirmModal"));
+const AdminNotesModal = lazy(() => import("@/components/admin/AdminNotesModal"));
+const AdminAITab = lazy(() => import("@/components/admin/AdminAITab"));
 
 interface Visitor {
   id: string;
@@ -135,6 +141,13 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<"visitors" | "appeals" | "ai-assistant">(
     "visitors"
   );
+
+  // Performance optimizations - Always call hooks unconditionally
+  const performanceData = usePerformanceOptimization();
+  const swipeData = useAdminSwipeNavigation();
+  
+  const { loadTime } = performanceData;
+  const { isSwipeActive, swipeDirection } = swipeData;
 
   // Visitors state
   const [visitors, setVisitors] = useState<Visitor[]>([]);
@@ -940,6 +953,9 @@ export default function AdminDashboard() {
     setNotesModalData(null);
   };
 
+  // Memoize analytics data to prevent unnecessary recalculations - MUST be before early returns
+  const memoizedAnalyticsData = useMemo(() => analyticsData, [analyticsData]);
+
   // Update analytics when data changes
   useEffect(() => {
     if (visitors.length > 0 || appeals.length > 0) {
@@ -957,234 +973,202 @@ export default function AdminDashboard() {
 
   return (
     <ThemeProvider>
-      <div className="min-h-screen bg-black-100">
-        {/* Enhanced Header */}
-        <header className="bg-black-100/80 backdrop-blur-md border-b border-white/[0.2] sticky top-0 z-40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                    <svg
-                      className="w-5 h-5 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                      />
+      <div className="min-h-screen bg-slate-50 gpu-accelerated page-container">
+        {/* Unified Navbar with Performance Optimizations */}
+        <UnifiedNavbar
+          visitorStats={visitorStats}
+          appealStats={appealStats}
+          aiQuestionCount={aiQuestions.length}
+          isRealTimeActive={isRealTimeActive}
+          onLiveSyncToggle={handleLiveSyncToggle}
+        />
+
+        {/* Performance Debug Info (Development Only) */}
+        {process.env.NODE_ENV === 'development' && loadTime > 0 && (
+          <div className="fixed bottom-4 right-4 bg-black/80 text-white text-xs px-3 py-2 rounded-lg z-50">
+            Load Time: {loadTime.toFixed(2)}ms
+          </div>
+        )}
+
+        {/* Swipe Gesture Indicators */}
+        {isSwipeActive && (
+          <>
+            <div className={`swipe-indicator left ${swipeDirection === 'right' ? 'active' : ''}`} />
+            <div className={`swipe-indicator right ${swipeDirection === 'left' ? 'active' : ''}`} />
+          </>
+        )}
+
+        {/* Main Content - Light Theme */}
+        <main className="px-6 lg:px-8 py-8 preload-hint">
+          {/* Analytics Cards with Performance Optimization */}
+          <Suspense fallback={<div className="skeleton h-32 rounded-xl mb-8"></div>}>
+            <AnalyticsCards data={memoizedAnalyticsData} isLoading={isLoading} />
+          </Suspense>
+
+          {/* Dashboard Overview Content */}
+          <div className="space-y-8">
+            {/* Quick Actions */}
+            <div className="bg-white border border-slate-200 rounded-xl p-6">
+              <h2 className="text-xl font-semibold text-slate-900 mb-4">Quick Actions</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <button
+                  onClick={() => router.push("/admin/visitors")}
+                  className="flex items-center space-x-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group"
+                >
+                  <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                     </svg>
                   </div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                    Smart Tracking Admin
-                  </h1>
-                </div>
-
-                {/* Live Sync Toggle */}
-                <LiveSyncToggle
-                  isEnabled={isRealTimeActive}
-                  onToggle={handleLiveSyncToggle}
-                />
-
-                <div className="hidden sm:flex space-x-1">
-                  <button
-                    onClick={() => setActiveTab("visitors")}
-                    className={`px-4 py-2 rounded-lg transition-all duration-200 ${
-                      activeTab === "visitors"
-                        ? "bg-blue-500 text-white shadow-lg shadow-blue-500/25"
-                        : "text-gray-300 hover:text-white hover:bg-white/[0.05]"
-                    }`}
-                  >
-                    Visitors ({visitorStats.total})
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("appeals")}
-                    className={`px-4 py-2 rounded-lg transition-all duration-200 relative ${
-                      activeTab === "appeals"
-                        ? "bg-blue-500 text-white shadow-lg shadow-blue-500/25"
-                        : "text-gray-300 hover:text-white hover:bg-white/[0.05]"
-                    }`}
-                  >
-                    Appeals ({appealStats.total})
-                    {appealStats.pending > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-bounce">
-                        {appealStats.pending}
-                      </span>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("ai-assistant")}
-                    className={`px-4 py-2 rounded-lg transition-all duration-200 ${
-                      activeTab === "ai-assistant"
-                        ? "bg-blue-500 text-white shadow-lg shadow-blue-500/25"
-                        : "text-gray-300 hover:text-white hover:bg-white/[0.05]"
-                    }`}
-                  >
-                    AI Assistant ({aiQuestions.length})
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                {/* Theme Toggle */}
-                <ThemeToggle />
-
-                {/* Admin Info */}
-                <div className="flex items-center space-x-3">
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-white">Gaurav</p>
-                    <p className="text-xs text-gray-400">Administrator</p>
+                  <div className="text-left">
+                    <p className="font-medium text-slate-900">Manage Visitors</p>
+                    <p className="text-sm text-slate-500">View and manage all visitors</p>
                   </div>
-                  <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">G</span>
-                  </div>
-                </div>
+                </button>
 
                 <button
-                  onClick={handleLogout}
-                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
+                  onClick={() => router.push("/admin/appeals")}
+                  className="flex items-center space-x-3 p-4 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors group"
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                    />
-                  </svg>
-                  <span>Logout</span>
+                  <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium text-slate-900">Review Appeals</p>
+                    <p className="text-sm text-slate-500">{appealStats.pending} pending appeals</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => router.push("/admin/ai-assistant")}
+                  className="flex items-center space-x-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors group"
+                >
+                  <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium text-slate-900">AI Assistant</p>
+                    <p className="text-sm text-slate-500">Manage AI questions</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => fetchVisitors()}
+                  className="flex items-center space-x-3 p-4 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors group"
+                >
+                  <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium text-slate-900">Refresh Data</p>
+                    <p className="text-sm text-slate-500">Update all statistics</p>
+                  </div>
                 </button>
               </div>
             </div>
+
+            {/* Recent Activity */}
+            <div className="bg-white border border-slate-200 rounded-xl p-6">
+              <h2 className="text-xl font-semibold text-slate-900 mb-4">Recent Activity</h2>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-slate-900">New visitors detected</p>
+                    <p className="text-xs text-slate-500">Live tracking active</p>
+                  </div>
+                  <span className="text-xs text-slate-400">Live</span>
+                </div>
+                
+                {appealStats.pending > 0 && (
+                  <div className="flex items-center space-x-3 p-3 bg-amber-50 rounded-lg">
+                    <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-900">Pending appeals require attention</p>
+                      <p className="text-xs text-slate-500">{appealStats.pending} appeals waiting for review</p>
+                    </div>
+                    <button
+                      onClick={() => router.push("/admin/appeals")}
+                      className="text-xs text-amber-600 hover:text-amber-700 font-medium"
+                    >
+                      Review
+                    </button>
+                  </div>
+                )}
+                
+                <div className="flex items-center space-x-3 p-3 bg-emerald-50 rounded-lg">
+                  <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-slate-900">System running smoothly</p>
+                    <p className="text-xs text-slate-500">All services operational</p>
+                  </div>
+                  <span className="text-xs text-emerald-600">●</span>
+                </div>
+              </div>
+            </div>
           </div>
-        </header>
-
-        {/* Mobile tab selector */}
-        <div className="sm:hidden bg-black-100/50 border-b border-white/[0.1]">
-          <div className="flex">
-            <button
-              onClick={() => setActiveTab("visitors")}
-              className={`flex-1 py-3 text-center transition-colors ${
-                activeTab === "visitors"
-                  ? "bg-blue-500 text-white"
-                  : "text-gray-300 hover:text-white"
-              }`}
-            >
-              Visitors ({visitorStats.total})
-            </button>
-            <button
-              onClick={() => setActiveTab("appeals")}
-              className={`flex-1 py-3 text-center transition-colors relative ${
-                activeTab === "appeals"
-                  ? "bg-blue-500 text-white"
-                  : "text-gray-300 hover:text-white"
-              }`}
-            >
-              Appeals ({appealStats.total})
-              {appealStats.pending > 0 && (
-                <span className="absolute top-1 right-4 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {appealStats.pending}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab("ai-assistant")}
-              className={`flex-1 py-3 text-center transition-colors text-xs ${
-                activeTab === "ai-assistant"
-                  ? "bg-blue-500 text-white"
-                  : "text-gray-300 hover:text-white"
-              }`}
-            >
-              AI Assistant ({aiQuestions.length})
-            </button>
-          </div>
-        </div>
-
-        {/* Main content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Analytics Cards */}
-          <AnalyticsCards data={analyticsData} isLoading={isLoading} />
-
-          {activeTab === "visitors" ? (
-            <VisitorsTab
-              visitors={visitors}
-              stats={visitorStats}
-              selectedVisitors={selectedVisitors}
-              setSelectedVisitors={setSelectedVisitors}
-              filter={visitorFilter}
-              setFilter={setVisitorFilter}
-              onBulkAction={handleBulkAction}
-              onSingleAction={handleSingleAction}
-              onDeleteVisitors={handleDeleteVisitors}
-              onEditNotes={handleEditNotes}
-              onRefresh={fetchVisitors}
-              isProcessing={isProcessing}
-            />
-          ) : activeTab === "appeals" ? (
-            <AppealsTab
-              appeals={appeals}
-              stats={appealStats}
-              onAppealAction={handleAppealAction}
-              onDeleteAppeals={handleDeleteAppeals}
-              onRefresh={fetchAppeals}
-            />
-          ) : (
-            <AdminAITab
-              questions={aiQuestions}
-              onAddQuestion={handleAddAIQuestion}
-              onEditQuestion={handleEditAIQuestion}
-              onDeleteQuestion={handleDeleteAIQuestion}
-              onRefresh={fetchAIQuestions}
-              isLoading={aiQuestionsLoading}
-            />
-          )}
         </main>
 
-        {/* Enhanced Ban Modal */}
-        <EnhancedBanModal
-          isOpen={showBanModal}
-          onClose={() => setShowBanModal(false)}
-          selectedUUIDs={Array.from(selectedVisitors)}
-          onBanComplete={handleBanComplete}
-        />
-
-        {/* Delete Confirmation Modal */}
-        {deleteConfig && (
-          <DeleteConfirmModal
-            isOpen={showDeleteModal}
-            onClose={() => {
-              setShowDeleteModal(false);
-              setDeleteConfig(null);
-            }}
-            onConfirm={handleConfirmDelete}
-            title={deleteConfig.title}
-            message={deleteConfig.message}
-            itemCount={deleteConfig.items.length}
-            type={deleteConfig.type}
+        {/* Enhanced Ban Modal with Lazy Loading */}
+        <Suspense fallback={null}>
+          <EnhancedBanModal
+            isOpen={showBanModal}
+            onClose={() => setShowBanModal(false)}
+            selectedUUIDs={Array.from(selectedVisitors)}
+            onBanComplete={handleBanComplete}
           />
+        </Suspense>
+
+        {/* Delete Confirmation Modal with Lazy Loading */}
+        {deleteConfig && (
+          <Suspense fallback={null}>
+            <DeleteConfirmModal
+              isOpen={showDeleteModal}
+              onClose={() => {
+                setShowDeleteModal(false);
+                setDeleteConfig(null);
+              }}
+              onConfirm={handleConfirmDelete}
+              title={deleteConfig.title}
+              message={deleteConfig.message}
+              itemCount={deleteConfig.items.length}
+              type={deleteConfig.type}
+            />
+          </Suspense>
         )}
 
-        {/* Admin Notes Modal */}
+        {/* Admin Notes Modal with Lazy Loading */}
         {notesModalData && (
-          <AdminNotesModal
-            isOpen={showNotesModal}
-            onClose={() => {
-              setShowNotesModal(false);
-              setNotesModalData(null);
-            }}
-            visitorUuid={notesModalData.uuid}
-            currentNotes={notesModalData.currentNotes}
-            onNotesUpdated={handleNotesUpdated}
-          />
+          <Suspense fallback={null}>
+            <AdminNotesModal
+              isOpen={showNotesModal}
+              onClose={() => {
+                setShowNotesModal(false);
+                setNotesModalData(null);
+              }}
+              visitorUuid={notesModalData.uuid}
+              currentNotes={notesModalData.currentNotes}
+              onNotesUpdated={handleNotesUpdated}
+            />
+          </Suspense>
         )}
       </div>
     </ThemeProvider>
@@ -1194,10 +1178,10 @@ export default function AdminDashboard() {
 // Loading screen component
 function LoadingScreen() {
   return (
-    <div className="min-h-screen bg-black-100 flex items-center justify-center">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
       <div className="text-center">
-        <div className="w-16 h-16 border-4 border-gray-700 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-white text-lg">Loading Admin Dashboard...</p>
+        <div className="w-16 h-16 border-4 border-slate-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-slate-600 text-lg">Loading Admin Dashboard...</p>
       </div>
     </div>
   );
@@ -1534,16 +1518,12 @@ function VisitorsTab({
                       </div>
                       <div className="text-xs text-gray-400">
                         {visitor.isOnline
-                          ? `Online for ${Math.floor(
+                          ? `Online for ${formatDuration(Math.floor(
                               (visitor.sessionDuration || 0) / 60
-                            )}m`
+                            ))}`
                           : visitor.lastSeen
-                          ? `Last seen ${new Date(
-                              visitor.lastSeen
-                            ).toLocaleTimeString()}`
-                          : `Last: ${new Date(
-                              visitor.lastVisit
-                            ).toLocaleTimeString()}`}
+                          ? `Last seen ${formatTimeIST(visitor.lastSeen)}`
+                          : `Last: ${formatTimeIST(visitor.lastVisit)}`}
                       </div>
                     </div>
                   </td>
@@ -1646,15 +1626,15 @@ function AppealsTab({
     <div className="space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-black-100/50 border border-white/[0.2] rounded-xl p-6">
+        <div className="bg-white border border-slate-200 rounded-xl p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Total Appeals</p>
-              <p className="text-3xl font-bold text-white">{stats.total}</p>
+              <p className="text-slate-500 text-sm font-medium">Total Appeals</p>
+              <p className="text-3xl font-bold text-slate-900">{stats.total}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
               <svg
-                className="w-6 h-6 text-blue-400"
+                className="w-6 h-6 text-blue-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1670,17 +1650,17 @@ function AppealsTab({
           </div>
         </div>
 
-        <div className="bg-black-100/50 border border-white/[0.2] rounded-xl p-6">
+        <div className="bg-white border border-slate-200 rounded-xl p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Pending Appeals</p>
-              <p className="text-3xl font-bold text-yellow-400">
+              <p className="text-slate-500 text-sm font-medium">Pending Appeals</p>
+              <p className="text-3xl font-bold text-amber-600">
                 {stats.pending}
               </p>
             </div>
-            <div className="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
               <svg
-                className="w-6 h-6 text-yellow-400"
+                className="w-6 h-6 text-amber-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1698,20 +1678,20 @@ function AppealsTab({
       </div>
 
       {/* Appeals list */}
-      <div className="bg-black-100/50 border border-white/[0.2] rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-white/[0.1] flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">Ban Appeals</h3>
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+          <h3 className="text-lg font-semibold text-slate-900">Ban Appeals</h3>
           <div className="flex space-x-2">
             <button
               onClick={onRefresh}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg transition-colors font-medium"
             >
               Refresh
             </button>
             {appeals.length > 0 && (
               <button
                 onClick={() => onDeleteAppeals(appeals.map((a) => a.id))}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 font-medium"
               >
                 <svg
                   className="w-4 h-4"
@@ -1732,18 +1712,18 @@ function AppealsTab({
           </div>
         </div>
 
-        <div className="divide-y divide-white/[0.1]">
+        <div className="divide-y divide-slate-200">
           {appeals.map((appeal: BanAppeal) => (
             <div key={appeal.id} className="p-6">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h4 className="text-lg font-medium text-white">
+                  <h4 className="text-lg font-medium text-slate-900">
                     {appeal.subject}
                   </h4>
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-slate-600">
                     From: {appeal.name} ({appeal.email})
                   </p>
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-slate-500">
                     UUID: {appeal.uuid} • Submitted:{" "}
                     {new Date(appeal.submittedAt).toLocaleString()}
                   </p>
@@ -1751,12 +1731,12 @@ function AppealsTab({
                 <span
                   className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                     appeal.status === "pending"
-                      ? "bg-yellow-100 text-yellow-800"
+                      ? "bg-amber-100 text-amber-800"
                       : appeal.status === "approved"
-                      ? "bg-green-100 text-green-800"
+                      ? "bg-emerald-100 text-emerald-800"
                       : appeal.status === "rejected"
                       ? "bg-red-100 text-red-800"
-                      : "bg-gray-100 text-gray-800"
+                      : "bg-slate-100 text-slate-800"
                   }`}
                 >
                   {appeal.status}
@@ -1764,17 +1744,17 @@ function AppealsTab({
               </div>
 
               <div className="mb-4">
-                <p className="text-sm text-gray-400 mb-2">
+                <p className="text-sm text-slate-600 mb-2 font-medium">
                   Original ban reason:
                 </p>
-                <p className="text-sm text-red-300 bg-red-500/10 p-2 rounded">
+                <p className="text-sm text-red-700 bg-red-50 p-3 rounded-lg border border-red-200">
                   {appeal.banReason}
                 </p>
               </div>
 
               <div className="mb-4">
-                <p className="text-sm text-gray-400 mb-2">Appeal message:</p>
-                <p className="text-sm text-white bg-black-100/50 p-3 rounded">
+                <p className="text-sm text-slate-600 mb-2 font-medium">Appeal message:</p>
+                <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-200">
                   {appeal.message}
                 </p>
               </div>
@@ -1790,7 +1770,7 @@ function AppealsTab({
                           "Appeal approved by admin"
                         )
                       }
-                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors"
+                      className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg transition-colors font-medium"
                     >
                       Approve
                     </button>
@@ -1802,7 +1782,7 @@ function AppealsTab({
                           "Appeal rejected by admin"
                         )
                       }
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors font-medium"
                     >
                       Reject
                     </button>
@@ -1810,7 +1790,7 @@ function AppealsTab({
                 )}
                 <button
                   onClick={() => onDeleteAppeals([appeal.id])}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg transition-colors flex items-center space-x-1"
+                  className="bg-slate-500 hover:bg-slate-600 text-white px-3 py-2 rounded-lg transition-colors flex items-center space-x-1 font-medium"
                   title="Delete appeal"
                 >
                   <svg
@@ -1831,7 +1811,7 @@ function AppealsTab({
               </div>
 
               {appeal.reviewedAt && (
-                <div className="mt-4 text-sm text-gray-400">
+                <div className="mt-4 text-sm text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-200">
                   Reviewed by {appeal.reviewedBy} on{" "}
                   {new Date(appeal.reviewedAt).toLocaleString()}
                   {appeal.reviewNotes && (

@@ -3,6 +3,7 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
+import { logger } from "@/utils/secureLogger";
 
 // Load Firebase config from environment variables
 const firebaseConfig = {
@@ -14,8 +15,8 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// 🔍 Debug log full config
-console.log("🔥 Firebase client config loaded:", firebaseConfig);
+// 🔍 Secure logging of Firebase config (hides sensitive data)
+logger.firebaseInfo("🔥 Firebase client config loaded", firebaseConfig);
 
 // 🚨 Check for missing critical fields
 const missingKeys = Object.entries(firebaseConfig)
@@ -23,7 +24,7 @@ const missingKeys = Object.entries(firebaseConfig)
   .map(([key]) => key);
 
 if (missingKeys.length > 0) {
-  console.error("❌ Firebase config is missing required keys:", missingKeys);
+  logger.error("❌ Firebase config is missing required keys", { missingKeys });
   throw new Error(
     `🔥 Firebase initialization failed: Missing env vars -> ${missingKeys.join(
       ", "
@@ -35,9 +36,9 @@ if (missingKeys.length > 0) {
 let app: FirebaseApp;
 try {
   app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  console.log("✅ Firebase app initialized");
+  logger.info("✅ Firebase app initialized");
 } catch (err) {
-  console.error("❌ Firebase initialization error:", err);
+  logger.error("❌ Firebase initialization error", err);
   throw err;
 }
 
@@ -45,9 +46,9 @@ try {
 let db: Firestore;
 try {
   db = getFirestore(app);
-  console.log("✅ Firestore initialized");
+  logger.info("✅ Firestore initialized");
 } catch (err) {
-  console.error("❌ Firestore initialization failed:", err);
+  logger.error("❌ Firestore initialization failed", err);
   throw err;
 }
 
@@ -55,9 +56,9 @@ try {
 let storage: FirebaseStorage;
 try {
   storage = getStorage(app);
-  console.log("✅ Firebase Storage initialized");
+  logger.info("✅ Firebase Storage initialized");
 } catch (err) {
-  console.error("❌ Firebase Storage initialization failed:", err);
+  logger.error("❌ Firebase Storage initialization failed", err);
   throw err;
 }
 

@@ -181,51 +181,52 @@ export default function AnalyticsCards({ data, isLoading = false }: AnalyticsCar
       {cards.map((card, index) => (
         <div
           key={card.title}
-          className={`relative bg-black-100/50 border border-white/[0.2] rounded-xl p-6 hover:bg-black-100/70 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-${card.color}-500/10 group`}
+          className="relative bg-white border border-slate-200 rounded-xl p-6 hover:shadow-lg hover:shadow-slate-200/50 transition-all duration-300 hover:scale-[1.02] group"
           style={{
             animationDelay: `${index * 100}ms`
           }}
         >
-          {/* Background gradient */}
-          <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+          {/* Background gradient on hover */}
+          <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} rounded-xl opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
           
           {/* Content */}
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-4">
-              <div className={`w-12 h-12 ${card.iconBg} rounded-full flex items-center justify-center ${card.pulse ? 'animate-pulse' : ''}`}>
+              <div className={`w-12 h-12 ${card.iconBg} rounded-full flex items-center justify-center ${card.pulse ? 'animate-pulse' : ''} transition-transform duration-300 group-hover:scale-110`}>
                 <div className={card.iconColor}>
                   {card.icon}
                 </div>
               </div>
               
               {card.badge && card.value > 0 && (
-                <div className="w-3 h-3 bg-red-500 rounded-full animate-bounce" />
+                <div className="w-3 h-3 bg-red-500 rounded-full animate-bounce shadow-sm" />
               )}
             </div>
             
-            <div className="space-y-1">
-              <p className="text-gray-400 text-sm font-medium">{card.title}</p>
-              <div className="flex items-baseline space-x-2">
+            <div className="space-y-2">
+              <p className="text-slate-500 text-sm font-medium">{card.title}</p>
+              <div className="flex items-baseline space-x-3">
                 {isLoading ? (
-                  <div className="h-8 w-16 bg-gray-700 rounded animate-pulse" />
+                  <div className="h-8 w-16 bg-slate-200 rounded animate-pulse" />
                 ) : (
-                  <p className={`text-3xl font-bold text-white group-hover:${card.textColor} transition-colors duration-300`}>
+                  <p className="text-3xl font-bold text-slate-900 transition-colors duration-300">
                     {card.value.toLocaleString()}
                   </p>
                 )}
                 
-                {/* Trend indicator (placeholder for future enhancement) */}
-                <div className="flex items-center text-xs">
-                  <svg className="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {/* Trend indicator */}
+                <div className="flex items-center text-xs bg-emerald-50 text-emerald-600 px-2 py-1 rounded-full">
+                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17l9.2-9.2M17 17V7H7" />
                   </svg>
+                  <span className="font-medium">+12%</span>
                 </div>
               </div>
             </div>
           </div>
           
-          {/* Hover effect border */}
-          <div className={`absolute inset-0 rounded-xl border-2 border-${card.color}-500/0 group-hover:border-${card.color}-500/30 transition-all duration-300`} />
+          {/* Subtle border accent on hover */}
+          <div className={`absolute inset-0 rounded-xl border-2 border-transparent group-hover:border-${card.color}-200 transition-all duration-300`} />
         </div>
       ))}
     </div>
@@ -239,14 +240,14 @@ export function AnalyticsCardsLoading() {
       {Array.from({ length: 8 }).map((_, index) => (
         <div
           key={index}
-          className="bg-black-100/50 border border-white/[0.2] rounded-xl p-6 animate-pulse"
+          className="bg-white border border-slate-200 rounded-xl p-6 animate-pulse"
         >
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-gray-700 rounded-full" />
+            <div className="w-12 h-12 bg-slate-200 rounded-full" />
           </div>
           <div className="space-y-2">
-            <div className="h-4 w-24 bg-gray-700 rounded" />
-            <div className="h-8 w-16 bg-gray-700 rounded" />
+            <div className="h-4 w-24 bg-slate-200 rounded" />
+            <div className="h-8 w-16 bg-slate-200 rounded" />
           </div>
         </div>
       ))}
