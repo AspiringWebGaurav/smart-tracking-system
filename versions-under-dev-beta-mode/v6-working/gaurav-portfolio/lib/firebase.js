@@ -2,6 +2,7 @@
 
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 import { logger } from "../utils/secureLogger";
 
 // Load Firebase config from environment variables
@@ -51,4 +52,14 @@ try {
   throw err;
 }
 
-export { db };
+// ✅ Get Storage instance
+let storage;
+try {
+  storage = getStorage(app);
+  logger.info("✅ Firebase Storage initialized");
+} catch (err) {
+  logger.error("❌ Firebase Storage initialization failed", err);
+  throw err;
+}
+
+export { db, app, storage };
