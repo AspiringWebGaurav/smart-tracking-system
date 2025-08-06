@@ -103,21 +103,43 @@ export default function VisitorTracker({ onTrackingComplete, onError, uuid }: Vi
       console.log('✅ Visitor tracking successful:', result);
 
       // Initialize enhanced tracking features after successful API call
-      try {
-        // Add a small delay to ensure document creation is complete
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Initialize real-time presence tracking
-        await initializePresenceTracking(visitorUUID);
-        console.log('✅ Presence tracking initialized');
+      // Only if a new visitor was created or updated (not duplicate)
+      if (result.message !== "Duplicate visitor detected") {
+        try {
+          // Add a small delay to ensure document creation is complete
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Initialize real-time presence tracking
+          await initializePresenceTracking(visitorUUID);
+          console.log('✅ Presence tracking initialized');
 
-        // Update visitor with enhanced data (location, device info, referral)
-        await updateVisitorWithEnhancedData(visitorUUID);
-        console.log('✅ Enhanced visitor data updated');
+          // Update visitor with enhanced data (location, device info, referral)
+          await updateVisitorWithEnhancedData(visitorUUID);
+          console.log('✅ Enhanced visitor data updated');
 
-      } catch (enhancedError) {
-        console.warn('⚠️ Enhanced tracking features failed:', enhancedError);
-        // Don't fail the entire tracking if enhanced features fail
+        } catch (enhancedError) {
+          console.warn('⚠️ Enhanced tracking features failed:', enhancedError);
+          // Don't fail the entire tracking if enhanced features fail
+        }
+      } else {
+        // For duplicate visitors, use the UUID returned by the API
+        const actualUUID = result.uuid || visitorUUID;
+        try {
+          // Add a small delay to ensure document creation is complete
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Initialize real-time presence tracking with the actual UUID
+          await initializePresenceTracking(actualUUID);
+          console.log('✅ Presence tracking initialized for duplicate visitor');
+
+          // Update visitor with enhanced data (location, device info, referral)
+          await updateVisitorWithEnhancedData(actualUUID);
+          console.log('✅ Enhanced visitor data updated for duplicate visitor');
+
+        } catch (enhancedError) {
+          console.warn('⚠️ Enhanced tracking features failed for duplicate visitor:', enhancedError);
+          // Don't fail the entire tracking if enhanced features fail
+        }
       }
 
       setTrackingComplete(true);
