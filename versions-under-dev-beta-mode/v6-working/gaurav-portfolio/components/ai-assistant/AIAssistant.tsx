@@ -148,13 +148,12 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
     }
   }, [isClient, isPortfolioLoaded, popupSessionState.hasOpenedAI, popupSessionState.hasShownInitialPopup, assistantState.isVisible]);
 
-  // Recurring auto-popup timer - every 10 seconds if AI hasn't been opened
+  // Recurring auto-popup timer - every 9 seconds if AI hasn't been opened
   useEffect(() => {
     if (!isClient ||
         !isPortfolioLoaded ||
         popupSessionState.hasOpenedAI ||
         assistantState.isVisible ||
-        showAutoPopup ||
         !popupSessionState.hasShownInitialPopup) {
       
       // Clear any existing timer
@@ -165,7 +164,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
       return;
     }
       
-    console.log('🔄 AI Assistant: Setting up recurring popup timer (10s interval)');
+    console.log('🔄 AI Assistant: Setting up recurring popup timer (9s interval)');
     const recurringTimer = setInterval(() => {
       console.log('🎯 AI Assistant: Showing recurring popup');
       setShowAutoPopup(true);
@@ -174,7 +173,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
         lastPopupTime: new Date().toISOString(),
         popupCount: prev.popupCount + 1
       }));
-    }, 10000); // 10 seconds
+    }, 9000); // 9 seconds
 
     setAutoPopupTimer(recurringTimer);
 
@@ -182,7 +181,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
       clearInterval(recurringTimer);
       setAutoPopupTimer(null);
     };
-  }, [isClient, isPortfolioLoaded, popupSessionState.hasOpenedAI, assistantState.isVisible, showAutoPopup, popupSessionState.hasShownInitialPopup, autoPopupTimer]);
+  }, [isClient, isPortfolioLoaded, popupSessionState.hasOpenedAI, assistantState.isVisible, popupSessionState.hasShownInitialPopup]);
 
   // Clean up timers when component unmounts
   useEffect(() => {
@@ -324,7 +323,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
       {!assistantState.isVisible && (
         <button
           onClick={handleShow}
-          className="fixed top-1/2 right-6 -translate-y-1/2 z-40 group"
+          className="fixed top-1/2 right-4 sm:right-6 -translate-y-1/2 z-40 group"
           title="Gaurav's Personal Assistant (Ctrl+Shift+A)"
           aria-label="Gaurav's Assistant"
         >

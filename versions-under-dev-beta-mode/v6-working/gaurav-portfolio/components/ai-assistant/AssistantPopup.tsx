@@ -62,10 +62,10 @@ const AssistantPopup: React.FC<AssistantPopupProps> = ({
 
           {/* Assistant Container */}
           <div
-            className={`fixed top-1/2 right-3 sm:right-6 -translate-y-1/2 z-50 transition-all duration-800 ease-out ${
+            className={`fixed right-3 sm:right-6 z-50 transition-all duration-800 ease-out ${
               isMinimized
-                ? "w-16 h-16"
-                : "w-[520px] max-w-[95vw] sm:max-w-[90vw] md:max-w-[520px] h-[650px] max-h-[90vh] sm:max-h-[85vh]"
+                ? "w-16 h-16 top-1/2 -translate-y-1/2"
+                : "w-[520px] max-w-[95vw] sm:max-w-[90vw] md:max-w-[520px] h-[450px] max-h-[70vh] sm:h-[550px] sm:max-h-[80vh] md:h-[650px] md:max-h-[85vh] top-[15%] sm:top-1/2 sm:-translate-y-1/2"
             } ${
               isAnimating
                 ? "translate-x-0 opacity-100"
@@ -115,7 +115,7 @@ const AssistantPopup: React.FC<AssistantPopupProps> = ({
               <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
                 <button
                   onClick={onMinimize}
-                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/50 flex items-center justify-center transition-all duration-200 hover:scale-105 relative z-20"
+                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/50 flex items-center justify-center transition-all duration-200 hover:scale-105 relative z-[60]"
                   title="Minimize"
                 >
                   <svg
@@ -135,7 +135,7 @@ const AssistantPopup: React.FC<AssistantPopupProps> = ({
 
                 <button
                   onClick={onClose}
-                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 flex items-center justify-center transition-all duration-200 hover:scale-105 relative z-20"
+                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 flex items-center justify-center transition-all duration-200 hover:scale-105 relative z-[60]"
                   title="Close"
                 >
                   <svg
