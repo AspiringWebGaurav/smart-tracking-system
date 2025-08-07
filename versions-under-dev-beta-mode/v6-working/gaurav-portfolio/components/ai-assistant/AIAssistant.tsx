@@ -5,6 +5,7 @@ import { AssistantState, ASSISTANT_CONFIG, PopupSessionState } from './types';
 import AssistantPopup from './AssistantPopup';
 import AITooltip from './AITooltip';
 import AIAutoPopup from './AIAutoPopup';
+import { silentLogger } from '@/utils/secureLogger';
 
 interface AIAssistantProps {
   isPortfolioLoaded?: boolean;
@@ -134,7 +135,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
     if (!popupSessionState.hasShownInitialPopup) {
       // Show initial popup after a delay
       const initialDelay = setTimeout(() => {
-        console.log('🎯 AI Assistant: Showing initial popup');
+        silentLogger.silent('AI Assistant: Showing initial popup');
         setShowAutoPopup(true);
         setPopupSessionState(prev => ({
           ...prev,
@@ -264,7 +265,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
   };
 
   const handleAutoPopupDismiss = () => {
-    console.log('🚫 AI Assistant: Popup dismissed');
+    silentLogger.silent('AI Assistant: Popup dismissed');
     setShowAutoPopup(false);
   };
 

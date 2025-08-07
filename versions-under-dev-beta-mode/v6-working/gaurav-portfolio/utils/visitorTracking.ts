@@ -2,6 +2,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { silentLogger, prodLogger } from './secureLogger';
 
 export interface DeviceFingerprint {
   userAgent: string;
@@ -94,14 +95,14 @@ export function getOrCreateVisitorUUID(urlUUID?: string): string {
   try {
     // If URL UUID is provided and valid, use it and ensure it's stored
     if (urlUUID && isValidUUID(urlUUID)) {
-      console.log("🔗 Using URL-based UUID:", urlUUID);
+      silentLogger.silent("Using URL-based UUID");
       // Store in storage for persistence
       try {
         localStorage.setItem("visitor_uuid", urlUUID);
         sessionStorage.setItem("visitor_uuid", urlUUID);
         storeInIndexedDB("visitor_uuid", urlUUID);
       } catch (error) {
-        console.warn("Storage not available:", error);
+        silentLogger.silent("Storage not available");
       }
       return urlUUID;
     }
@@ -109,14 +110,14 @@ export function getOrCreateVisitorUUID(urlUUID?: string): string {
     // Check if we have a URL UUID from current page
     const currentUrlUUID = getUUIDFromURL();
     if (currentUrlUUID && isValidUUID(currentUrlUUID)) {
-      console.log("🌐 Found UUID in current URL:", currentUrlUUID);
+      silentLogger.silent("Found UUID in current URL");
       // Store in storage for persistence
       try {
         localStorage.setItem("visitor_uuid", currentUrlUUID);
         sessionStorage.setItem("visitor_uuid", currentUrlUUID);
         storeInIndexedDB("visitor_uuid", currentUrlUUID);
       } catch (error) {
-        console.warn("Storage not available:", error);
+        silentLogger.silent("Storage not available");
       }
       return currentUrlUUID;
     }
@@ -131,7 +132,7 @@ export function getOrCreateVisitorUUID(urlUUID?: string): string {
       if (!uuid) {
         // Generate new UUID
         uuid = uuidv4();
-        console.log("🆕 Generated new UUID:", uuid);
+        silentLogger.silent("Generated new UUID");
       }
 
       // Store in both storages
@@ -144,7 +145,7 @@ export function getOrCreateVisitorUUID(urlUUID?: string): string {
 
     return uuid;
   } catch (error) {
-    console.warn("Storage not available, using session-only UUID:", error);
+    silentLogger.silent("Storage not available, using session-only UUID");
     // Fallback to session-only UUID
     if (!window.sessionUUID) {
       window.sessionUUID = uuidv4();
@@ -213,7 +214,7 @@ export async function storeInIndexedDB(key: string, value: any): Promise<void> {
       store.put(value, key);
     };
   } catch (error) {
-    console.warn("IndexedDB not available:", error);
+    silentLogger.silent("IndexedDB not available");
   }
 }
 
@@ -299,25 +300,25 @@ export async function getVisitorIP(): Promise<string> {
  * Check if visitor tracking is enabled (respects privacy settings)
  */
 export function isTrackingEnabled(): boolean {
-  console.log("🔍 Checking if tracking is enabled...");
+  silentLogger.silent("Checking if tracking is enabled");
   
   // Check Do Not Track header
   const doNotTrack = navigator.doNotTrack;
-  console.log("🔍 Do Not Track setting:", doNotTrack);
+  silentLogger.silent("Do Not Track setting checked");
   if (doNotTrack === "1") {
-    console.log("❌ Tracking disabled: Do Not Track is enabled");
+    silentLogger.silent("Tracking disabled: Do Not Track is enabled");
     return false;
   }
 
   // Check if user has opted out
   const optOut = localStorage.getItem("visitor_tracking_opt_out");
-  console.log("🔍 Opt-out setting:", optOut);
+  silentLogger.silent("Opt-out setting checked");
   if (optOut === "true") {
-    console.log("❌ Tracking disabled: User has opted out");
+    silentLogger.silent("Tracking disabled: User has opted out");
     return false;
   }
 
-  console.log("✅ Tracking is enabled");
+  silentLogger.silent("Tracking is enabled");
   return true;
 }
 
@@ -355,7 +356,7 @@ export async function initializePresenceTracking(uuid: string): Promise<void> {
       sessionStart: serverTimestamp(),
     });
 
-    console.log("✅ Presence tracking initialized for:", uuid);
+    silentLogger.silent("Presence tracking initialized");
 
     // Update presence every 30 seconds while active
     const presenceInterval = setInterval(async () => {
@@ -365,7 +366,7 @@ export async function initializePresenceTracking(uuid: string): Promise<void> {
           isOnline: true,
         });
       } catch (error) {
-        console.warn("Failed to update presence:", error);
+        silentLogger.silent("Failed to update presence");
         clearInterval(presenceInterval);
       }
     }, 30000);
@@ -450,7 +451,7 @@ export async function getVisitorLocation(): Promise<VisitorData["location"]> {
       flag: `https://flagcdn.com/16x12/${data.country_code?.toLowerCase()}.png`,
     };
   } catch (error) {
-    console.warn("Could not fetch location:", error);
+    silentLogger.silent("Could not fetch location");
     return {
       city: "Unknown",
       country: "Unknown",

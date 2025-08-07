@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from 'uuid';
 import { getOrCreateVisitorUUID } from "@/utils/visitorTracking";
+import { silentLogger, prodLogger } from '@/utils/secureLogger';
 
 // UUID Redirect Handler Component
 const UUIDRedirectHandler = () => {
@@ -33,17 +34,17 @@ const UUIDRedirectHandler = () => {
             localStorage.setItem('visitor_uuid', uuid);
             sessionStorage.setItem('visitor_uuid', uuid);
           } catch (error) {
-            console.warn("Storage not available:", error);
+            silentLogger.silent("Storage not available");
           }
         }
 
-        console.log("🔄 Redirecting to UUID-based route:", uuid);
+        silentLogger.silent("Redirecting to UUID-based route");
         
         // Redirect to UUID-based route
         router.replace(`/${uuid}`);
         
       } catch (error) {
-        console.error("❌ Error during UUID redirect:", error);
+        prodLogger.error("Error during UUID redirect", { error: error instanceof Error ? error.message : "Unknown error" });
         
         // Fallback: generate new UUID and redirect
         const fallbackUUID = uuidv4();

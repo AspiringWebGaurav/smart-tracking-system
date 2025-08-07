@@ -13,6 +13,7 @@ import {
   type DeviceFingerprint,
   type VisitorData
 } from '@/utils/visitorTracking';
+import { silentLogger, prodLogger } from '@/utils/secureLogger';
 
 interface VisitorTrackerProps {
   onTrackingComplete?: (visitorData: VisitorData) => void;
@@ -55,7 +56,7 @@ export default function VisitorTracker({ onTrackingComplete, onError, uuid }: Vi
       try {
         ipAddress = await getVisitorIP();
       } catch (error) {
-        console.warn('Could not fetch IP address:', error);
+        silentLogger.silent('Could not fetch IP address');
       }
 
       // Prepare visitor data
@@ -100,7 +101,7 @@ export default function VisitorTracker({ onTrackingComplete, onError, uuid }: Vi
       }
 
       const result = await response.json();
-      console.log('✅ Visitor tracking successful:', result);
+      silentLogger.silent('Visitor tracking successful');
 
       // Initialize enhanced tracking features after successful API call
       // Only if a new visitor was created or updated (not duplicate)
@@ -111,14 +112,14 @@ export default function VisitorTracker({ onTrackingComplete, onError, uuid }: Vi
           
           // Initialize real-time presence tracking
           await initializePresenceTracking(visitorUUID);
-          console.log('✅ Presence tracking initialized');
+          silentLogger.silent('Presence tracking initialized');
 
           // Update visitor with enhanced data (location, device info, referral)
           await updateVisitorWithEnhancedData(visitorUUID);
-          console.log('✅ Enhanced visitor data updated');
+          silentLogger.silent('Enhanced visitor data updated');
 
         } catch (enhancedError) {
-          console.warn('⚠️ Enhanced tracking features failed:', enhancedError);
+          silentLogger.silent('Enhanced tracking features failed');
           // Don't fail the entire tracking if enhanced features fail
         }
       } else {
@@ -130,14 +131,14 @@ export default function VisitorTracker({ onTrackingComplete, onError, uuid }: Vi
           
           // Initialize real-time presence tracking with the actual UUID
           await initializePresenceTracking(actualUUID);
-          console.log('✅ Presence tracking initialized for duplicate visitor');
+          silentLogger.silent('Presence tracking initialized for duplicate visitor');
 
           // Update visitor with enhanced data (location, device info, referral)
           await updateVisitorWithEnhancedData(actualUUID);
-          console.log('✅ Enhanced visitor data updated for duplicate visitor');
+          silentLogger.silent('Enhanced visitor data updated for duplicate visitor');
 
         } catch (enhancedError) {
-          console.warn('⚠️ Enhanced tracking features failed for duplicate visitor:', enhancedError);
+          silentLogger.silent('Enhanced tracking features failed for duplicate visitor');
           // Don't fail the entire tracking if enhanced features fail
         }
       }
@@ -146,7 +147,7 @@ export default function VisitorTracker({ onTrackingComplete, onError, uuid }: Vi
       onTrackingComplete?.(visitorData);
 
     } catch (error) {
-      console.error('❌ Visitor tracking failed:', error);
+      prodLogger.error('Visitor tracking failed', { error: error instanceof Error ? error.message : 'Unknown error' });
       onError?.(error as Error);
     } finally {
       setIsTracking(false);

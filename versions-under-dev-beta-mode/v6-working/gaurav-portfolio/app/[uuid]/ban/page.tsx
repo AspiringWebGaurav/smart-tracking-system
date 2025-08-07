@@ -10,6 +10,7 @@ import {
   showErrorToast
 } from '@/components/ToastSystem';
 import AppealModal from '@/components/AppealModal';
+import { silentLogger, prodLogger } from '@/utils/secureLogger';
 
 export default function UUIDBanPage() {
   const searchParams = useSearchParams();
@@ -29,8 +30,8 @@ export default function UUIDBanPage() {
     setUuid(urlUUID);
     setBanReason(decodeURIComponent(reasonParam));
     
-    console.log("🚫 Ban page loaded for UUID:", urlUUID);
-    console.log("🚫 Ban reason:", reasonParam);
+    silentLogger.silent("Ban page loaded for visitor");
+    silentLogger.silent("Ban reason received");
 
     // Start Firebase real-time listener for status changes
     if (urlUUID) {
@@ -40,7 +41,7 @@ export default function UUIDBanPage() {
     // Cleanup listener on unmount
     return () => {
       if (unsubscribeRef.current) {
-        console.log("🧹 Cleaning up Firebase listener on ban page");
+        silentLogger.silent("Cleaning up Firebase listener on ban page");
         unsubscribeRef.current();
       }
     };
@@ -52,7 +53,7 @@ export default function UUIDBanPage() {
     try {
       const docRef = doc(db as any, "visitors", userUUID);
       
-      console.log("👂 Starting Firebase listener on ban page for:", docRef.path);
+      silentLogger.silent("Starting Firebase listener on ban page");
       
       const unsubscribe = onSnapshot(
         docRef,
@@ -61,17 +62,17 @@ export default function UUIDBanPage() {
             const data = snapshot.data();
             const currentStatus = data.status;
             
-            console.log("📡 Status update received on ban page:", currentStatus);
+            silentLogger.silent("Status update received on ban page");
             
             // If user is unbanned, redirect to portfolio
             if (currentStatus === 'active') {
-              console.log("🎉 User unbanned! Redirecting to portfolio...");
+              silentLogger.silent("User unbanned! Redirecting to portfolio");
               handleUnbanRedirect(userUUID);
             }
           }
         },
         (error) => {
-          console.error("❌ Firebase listener error on ban page:", error);
+          prodLogger.error("Firebase listener error on ban page", { error: error.message });
           showErrorToast("Connection lost. Please refresh the page.");
         }
       );
@@ -79,7 +80,7 @@ export default function UUIDBanPage() {
       unsubscribeRef.current = unsubscribe;
       setIsListening(true);
     } catch (error) {
-      console.error("❌ Failed to start Firebase listener:", error);
+      prodLogger.error("Failed to start Firebase listener", { error: error instanceof Error ? error.message : "Unknown error" });
       showErrorToast("Failed to monitor status changes.");
     }
   };

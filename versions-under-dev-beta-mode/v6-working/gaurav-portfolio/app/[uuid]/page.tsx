@@ -16,6 +16,7 @@ import Experience from "@/components/Experience";
 import Approach from "@/components/Approach";
 import Footer from "@/components/Footer";
 import AIAssistant from "@/components/ai-assistant/AIAssistant";
+import { silentLogger, prodLogger } from '@/utils/secureLogger';
 
 // Unique Circular Loader Component
 const UniquePortfolioLoader = () => {
@@ -189,11 +190,11 @@ const UUIDPortfolioPage = () => {
     const validateAndSetUUID = () => {
       const urlUUID = params.uuid as string;
       
-      console.log("🔍 URL UUID:", urlUUID);
+      silentLogger.silent("URL UUID received");
 
       // Validate UUID format
       if (!urlUUID || !isValidUUID(urlUUID)) {
-        console.warn("❌ Invalid UUID in URL, generating new one");
+        silentLogger.silent("Invalid UUID in URL, generating new one");
         const newUUID = uuidv4();
         router.replace(`/${newUUID}`);
         return;
@@ -207,11 +208,11 @@ const UUIDPortfolioPage = () => {
         localStorage.setItem('visitor_uuid', urlUUID);
         sessionStorage.setItem('visitor_uuid', urlUUID);
       } catch (error) {
-        console.warn("Storage not available:", error);
+        silentLogger.silent("Storage not available");
       }
 
       setIsValidating(false);
-      console.log("✅ UUID validated and set:", urlUUID);
+      silentLogger.silent("UUID validated and set");
     };
 
     validateAndSetUUID();

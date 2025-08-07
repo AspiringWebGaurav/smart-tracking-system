@@ -6,6 +6,7 @@ import { getOrCreateVisitorUUID } from "@/utils/visitorTracking";
 import { showErrorToast, showBanToast, showProcessingToast } from "@/components/ToastSystem";
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { silentLogger, prodLogger } from '@/utils/secureLogger';
 
 interface BanGateProps {
   children: React.ReactNode;
@@ -38,14 +39,14 @@ export default function EnhancedBanGate({ children, uuid }: BanGateProps) {
       // Use UUID from props or fallback to generated UUID
       const visitorUUID = uuid || getOrCreateVisitorUUID();
       if (!visitorUUID) {
-        console.warn("⚠️ No UUID available, denying access for security");
+        prodLogger.warn("No UUID available, denying access for security");
         setAllowed(false);
         setLoading(false);
         return;
       }
 
       currentUUID.current = visitorUUID;
-      console.log("🔍 STRICT: Checking ban status for UUID:", visitorUUID);
+      silentLogger.silent("Checking ban status for visitor");
 
       // ALWAYS check Firebase status - NO session storage bypass for security
       const response = await fetch(`/api/visitors/status?uuid=${visitorUUID}`, {
@@ -69,10 +70,10 @@ export default function EnhancedBanGate({ children, uuid }: BanGateProps) {
       }
 
       const data = await response.json();
-      console.log("📊 STRICT: Visitor status from Firebase:", data);
+      silentLogger.silent("Visitor status retrieved from Firebase");
 
       if (data.status === "banned") {
-        console.log("🚫 STRICT: Visitor is banned, redirecting to ban page");
+        silentLogger.silent("Visitor is banned, redirecting to ban page");
         
         // Clear any session flags that might bypass security
         sessionStorage.removeItem("banCheckDone");
@@ -85,14 +86,14 @@ export default function EnhancedBanGate({ children, uuid }: BanGateProps) {
       }
 
       // Visitor is active, allow access and start real-time monitoring
-      console.log("✅ STRICT: Visitor is active, allowing access");
+      silentLogger.silent("Visitor is active, allowing access");
       setAllowed(true);
       
       // Start Firebase real-time listener for immediate ban detection
       startFirebaseListener(visitorUUID);
 
     } catch (error) {
-      console.error("❌ Error checking visitor status:", error);
+      prodLogger.error("Error checking visitor status", { error: error instanceof Error ? error.message : "Unknown error" });
       setError(error instanceof Error ? error.message : "Unknown error");
       
       // On error, DENY access for security (don't allow by default)
@@ -109,7 +110,7 @@ export default function EnhancedBanGate({ children, uuid }: BanGateProps) {
     try {
       // Clean up any existing listener first
       if (unsubscribeRef.current) {
-        console.log("🧹 Cleaning up existing listener before starting new one");
+        silentLogger.silent("Cleaning up existing listener before starting new one");
         unsubscribeRef.current();
         unsubscribeRef.current = null;
         setIsListening(false);
@@ -117,7 +118,7 @@ export default function EnhancedBanGate({ children, uuid }: BanGateProps) {
 
       const docRef = doc(db as any, "visitors", visitorUUID);
       
-      console.log("👂 STRICT: Starting Firebase listener in BanGate for:", docRef.path);
+      silentLogger.silent("Starting Firebase listener in BanGate");
       
       // Add a flag to prevent multiple toast calls
       let toastShown = false;
@@ -129,11 +130,11 @@ export default function EnhancedBanGate({ children, uuid }: BanGateProps) {
             const data = snapshot.data();
             const currentStatus = data.status;
             
-            console.log("📡 STRICT: Real-time status update in BanGate:", currentStatus);
+            silentLogger.silent("Real-time status update in BanGate");
             
             // If user gets banned while on the page, redirect immediately
             if (currentStatus === 'banned' && !toastShown) {
-              console.log("🚫 STRICT: User banned in real-time! Redirecting immediately...");
+              silentLogger.silent("User banned in real-time! Redirecting immediately");
               toastShown = true; // Prevent duplicate toasts
               
               // Clear any session flags
@@ -159,7 +160,7 @@ export default function EnhancedBanGate({ children, uuid }: BanGateProps) {
           }
         },
         (error) => {
-          console.error("❌ Firebase listener error in BanGate:", error);
+          prodLogger.error("Firebase listener error in BanGate", { error: error.message });
           showErrorToast("Connection to security monitoring lost. Please refresh.");
         }
       );
@@ -167,7 +168,7 @@ export default function EnhancedBanGate({ children, uuid }: BanGateProps) {
       unsubscribeRef.current = unsubscribe;
       setIsListening(true);
     } catch (error) {
-      console.error("❌ Failed to start Firebase listener in BanGate:", error);
+      prodLogger.error("Failed to start Firebase listener in BanGate", { error: error instanceof Error ? error.message : "Unknown error" });
     }
   };
 
