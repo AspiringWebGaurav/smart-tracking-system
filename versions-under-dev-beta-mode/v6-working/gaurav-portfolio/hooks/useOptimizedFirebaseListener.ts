@@ -46,10 +46,18 @@ export function useOptimizedFirebaseListener<T>(options: ListenerOptions<T>) {
       
       // Smart diffing - only update if data actually changed
       const newDataHash = JSON.stringify(newData);
-      if (dataHashRef.current !== newDataHash) {
-        console.log(`📡 Data updated: ${options.collectionName} (${newData.length} items)`);
+      const isForceRefresh = dataHashRef.current === '';
+      
+      if (dataHashRef.current !== newDataHash || isForceRefresh) {
+        if (isForceRefresh) {
+          console.log(`🔥 Force refresh: ${options.collectionName} (${newData.length} items) - bypassing cache`);
+        } else {
+          console.log(`📡 Data updated: ${options.collectionName} (${newData.length} items)`);
+        }
         setData(newData);
         dataHashRef.current = newDataHash;
+      } else {
+        console.log(`⚡ No changes detected for ${options.collectionName} (${newData.length} items)`);
       }
       
       setIsLoading(false);
@@ -166,10 +174,16 @@ export function useOptimizedFirebaseListener<T>(options: ListenerOptions<T>) {
     }
   }, [options.collectionName]);
   
-  const refresh = useCallback(() => {
+  const refresh = useCallback((forceUpdate = false) => {
+    console.log(`🔄 Manual refresh triggered for ${options.collectionName}`, { forceUpdate });
     setIsLoading(true);
+    if (forceUpdate) {
+      // Reset hash to force data update even if content is the same
+      dataHashRef.current = '';
+      console.log(`🔥 Force refresh: Reset data hash for ${options.collectionName}`);
+    }
     startListener();
-  }, [startListener]);
+  }, [startListener, options.collectionName]);
   
   // Auto-start listener
   useEffect(() => {

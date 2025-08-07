@@ -108,6 +108,7 @@ export function useVisitorData() {
   const fetchFallbackData = async () => {
     if (!useFallback) return;
     
+    console.log('📡 Starting API fallback fetch...');
     setFallbackLoading(true);
     setFallbackError(null);
     
@@ -121,9 +122,11 @@ export function useVisitorData() {
       }
       
       const data = await response.json();
-      setFallbackData(Array.isArray(data.visitors) ? data.visitors : []);
+      const visitors = Array.isArray(data.visitors) ? data.visitors : [];
+      console.log(`✅ API fallback successful: ${visitors.length} visitors loaded`);
+      setFallbackData(visitors);
     } catch (error) {
-      console.error('Fallback API fetch failed:', error);
+      console.error('❌ Fallback API fetch failed:', error);
       setFallbackError(error as Error);
       setFallbackData([]);
     } finally {
@@ -160,10 +163,17 @@ export function useVisitorData() {
   }, [visitors]);
 
   const refresh = () => {
+    console.log('🔄 Manual visitor data refresh triggered', {
+      useFallback,
+      currentDataCount: visitors.length
+    });
+    
     if (useFallback) {
+      console.log('📡 Refreshing via API fallback');
       fetchFallbackData();
     } else {
-      refreshFirebase();
+      console.log('🔥 Refreshing via Firebase with force update');
+      refreshFirebase(true); // Force update to bypass smart diffing
     }
   };
 

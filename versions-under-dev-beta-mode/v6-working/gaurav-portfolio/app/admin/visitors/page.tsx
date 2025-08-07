@@ -495,10 +495,37 @@ export default function VisitorsPage() {
                 </div>
 
                 <button
-                  onClick={() => refreshVisitors()}
-                  className="btn-secondary"
+                  onClick={() => {
+                    console.log('🔄 Refresh button clicked');
+                    setLoadingState('isRefreshing', true);
+                    refreshVisitors();
+                    
+                    // Set a timeout to ensure loading state is visible and provide feedback
+                    setTimeout(() => {
+                      setLoadingState('isRefreshing', false);
+                      showSuccessToast('Visitor data refreshed successfully');
+                      console.log('✅ Refresh completed with user feedback');
+                    }, 1200); // Slightly longer to ensure user sees the loading state
+                  }}
+                  disabled={loadingStates.isRefreshing}
+                  className={`btn-secondary flex items-center space-x-2 ${
+                    loadingStates.isRefreshing ? 'opacity-75 cursor-not-allowed' : ''
+                  }`}
+                  title={loadingStates.isRefreshing ? 'Refreshing data...' : 'Refresh visitor data'}
                 >
-                  Refresh
+                  {loadingStates.isRefreshing ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin"></div>
+                      <span>Refreshing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      <span>Refresh</span>
+                    </>
+                  )}
                 </button>
               </div>
 
