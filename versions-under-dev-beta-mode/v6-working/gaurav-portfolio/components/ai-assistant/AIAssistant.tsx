@@ -39,6 +39,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
     sessionStartTime: new Date().toISOString()
   });
   const [autoPopupTimer, setAutoPopupTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   // REMOVED: Auto-opening of AI assistant interface
   // The AI assistant should only open when user clicks on it
@@ -49,11 +50,17 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
     onAssistantStateChange?.(assistantState);
   }, [assistantState, onAssistantStateChange]);
 
-  // Handle user preferences and auto-popup session state (localStorage)
+  // Client-side hydration check
   useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Handle user preferences and auto-popup session state (localStorage) - CLIENT SIDE ONLY
+  useEffect(() => {
+    if (!isClient) return; // Prevent hydration mismatch
+    
     try {
       const savedPreferences = localStorage.getItem('ai-assistant-preferences');
-      const savedPopupState = localStorage.getItem('ai-popup-session-state');
       
       if (savedPreferences) {
         const preferences = JSON.parse(savedPreferences);
@@ -67,19 +74,25 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
         }
       }
 
-      if (savedPopupState) {
-        const popupState = JSON.parse(savedPopupState);
-        setPopupSessionState(popupState);
-        
-        // If user has opened AI before, don't show auto-popup
-        if (popupState.hasOpenedAI) {
-          setShowAutoPopup(false);
-        }
-      }
+      // IMPORTANT: Reset popup session state for each new session
+      // This ensures recurring popups work in both dev and production
+      const newSessionState: PopupSessionState = {
+        hasShownInitialPopup: false,
+        hasOpenedAI: false,
+        lastPopupTime: '',
+        popupCount: 0,
+        sessionStartTime: new Date().toISOString()
+      };
+      
+      setPopupSessionState(newSessionState);
+      
+      // Only persist user preferences, not session-specific popup state
+      console.log('🔄 AI Assistant: Session reset for consistent popup behavior');
+      
     } catch (error) {
       console.warn('Failed to load assistant preferences:', error);
     }
-  }, []);
+  }, [isClient]);
 
   // Tooltip management - show after portfolio loads if AI hasn't been opened
   useEffect(() => {
@@ -114,52 +127,62 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
 
   // Auto-popup management - show after portfolio loads if AI hasn't been opened
   useEffect(() => {
-    if (isPortfolioLoaded && !popupSessionState.hasOpenedAI && !assistantState.isVisible) {
-      if (!popupSessionState.hasShownInitialPopup) {
-        // Show initial popup after a delay
-        const initialDelay = setTimeout(() => {
-          setShowAutoPopup(true);
-          setPopupSessionState(prev => ({
-            ...prev,
-            hasShownInitialPopup: true,
-            lastPopupTime: new Date().toISOString(),
-            popupCount: prev.popupCount + 1
-          }));
-        }, 4000); // 4 seconds after portfolio loads
-
-        return () => clearTimeout(initialDelay);
-      }
+    if (!isClient || !isPortfolioLoaded || popupSessionState.hasOpenedAI || assistantState.isVisible) {
+      return;
     }
-  }, [isPortfolioLoaded, popupSessionState.hasOpenedAI, popupSessionState.hasShownInitialPopup, assistantState.isVisible]);
 
-  // Recurring auto-popup timer - every 1 minute if AI hasn't been opened
-  useEffect(() => {
-    if (isPortfolioLoaded &&
-        !popupSessionState.hasOpenedAI &&
-        !assistantState.isVisible &&
-        !showAutoPopup &&
-        popupSessionState.hasShownInitialPopup) {
-      
-      const recurringTimer = setInterval(() => {
+    if (!popupSessionState.hasShownInitialPopup) {
+      // Show initial popup after a delay
+      const initialDelay = setTimeout(() => {
+        console.log('🎯 AI Assistant: Showing initial popup');
         setShowAutoPopup(true);
         setPopupSessionState(prev => ({
           ...prev,
+          hasShownInitialPopup: true,
           lastPopupTime: new Date().toISOString(),
           popupCount: prev.popupCount + 1
         }));
-      }, 10000); // 10 seconds
+      }, 4000); // 4 seconds after portfolio loads
 
-      setAutoPopupTimer(recurringTimer);
-
-      return () => {
-        clearInterval(recurringTimer);
-        setAutoPopupTimer(null);
-      };
-    } else if (autoPopupTimer) {
-      clearInterval(autoPopupTimer);
-      setAutoPopupTimer(null);
+      return () => clearTimeout(initialDelay);
     }
-  }, [isPortfolioLoaded, popupSessionState.hasOpenedAI, assistantState.isVisible, showAutoPopup, popupSessionState.hasShownInitialPopup]);
+  }, [isClient, isPortfolioLoaded, popupSessionState.hasOpenedAI, popupSessionState.hasShownInitialPopup, assistantState.isVisible]);
+
+  // Recurring auto-popup timer - every 10 seconds if AI hasn't been opened
+  useEffect(() => {
+    if (!isClient ||
+        !isPortfolioLoaded ||
+        popupSessionState.hasOpenedAI ||
+        assistantState.isVisible ||
+        showAutoPopup ||
+        !popupSessionState.hasShownInitialPopup) {
+      
+      // Clear any existing timer
+      if (autoPopupTimer) {
+        clearInterval(autoPopupTimer);
+        setAutoPopupTimer(null);
+      }
+      return;
+    }
+      
+    console.log('🔄 AI Assistant: Setting up recurring popup timer (10s interval)');
+    const recurringTimer = setInterval(() => {
+      console.log('🎯 AI Assistant: Showing recurring popup');
+      setShowAutoPopup(true);
+      setPopupSessionState(prev => ({
+        ...prev,
+        lastPopupTime: new Date().toISOString(),
+        popupCount: prev.popupCount + 1
+      }));
+    }, 10000); // 10 seconds
+
+    setAutoPopupTimer(recurringTimer);
+
+    return () => {
+      clearInterval(recurringTimer);
+      setAutoPopupTimer(null);
+    };
+  }, [isClient, isPortfolioLoaded, popupSessionState.hasOpenedAI, assistantState.isVisible, showAutoPopup, popupSessionState.hasShownInitialPopup, autoPopupTimer]);
 
   // Clean up timers when component unmounts
   useEffect(() => {
@@ -173,14 +196,9 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
     };
   }, [tooltipTimer, autoPopupTimer]);
 
-  // Save popup session state to localStorage whenever it changes
-  useEffect(() => {
-    try {
-      localStorage.setItem('ai-popup-session-state', JSON.stringify(popupSessionState));
-    } catch (error) {
-      console.warn('Failed to save popup session state:', error);
-    }
-  }, [popupSessionState]);
+  // REMOVED: Don't save popup session state to localStorage
+  // This was causing the recurring popup issue in production
+  // We only save user preferences (hasOpenedAI, hasClosedBefore) but not session-specific popup state
 
   const handleClose = () => {
     setAssistantState(prev => ({
@@ -247,6 +265,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
   };
 
   const handleAutoPopupDismiss = () => {
+    console.log('🚫 AI Assistant: Popup dismissed');
     setShowAutoPopup(false);
   };
 
