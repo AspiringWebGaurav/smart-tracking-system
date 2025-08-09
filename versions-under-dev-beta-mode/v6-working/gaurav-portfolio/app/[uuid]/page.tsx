@@ -15,7 +15,7 @@ import Clients from "@/components/Clients";
 import Experience from "@/components/Experience";
 import Approach from "@/components/Approach";
 import Footer from "@/components/Footer";
-import EnhancedAIAssistant from "@/components/ai-assistant/EnhancedAIAssistant";
+import EnterpriseAIAssistant from "@/components/ai-assistant/enhanced/EnterpriseAIAssistant";
 import AIErrorBoundary from "@/components/ai-assistant/AIErrorBoundary";
 import { silentLogger, prodLogger } from '@/utils/secureLogger';
 
@@ -110,13 +110,13 @@ const UniquePortfolioLoader = () => {
 };
 
 // Go to Top Button Component
-const GoToTopButton = () => {
+const GoToTopButton = ({ hideWhenAIOpen }: { hideWhenAIOpen: boolean }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const toggleVisibility = () => {
-      // Show button when page is scrolled down 300px
-      if (window.pageYOffset > 300) {
+      // Show button when page is scrolled down 300px and AI Assistant is not open
+      if (window.pageYOffset > 300 && !hideWhenAIOpen) {
         setIsVisible(true);
       } else {
         setIsVisible(false);
@@ -124,8 +124,11 @@ const GoToTopButton = () => {
     };
 
     window.addEventListener("scroll", toggleVisibility);
+    // Also check visibility when hideWhenAIOpen changes
+    toggleVisibility();
+    
     return () => window.removeEventListener("scroll", toggleVisibility);
-  }, []);
+  }, [hideWhenAIOpen]);
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -141,7 +144,7 @@ const GoToTopButton = () => {
   return (
     <button
       onClick={scrollToTop}
-      className="fixed bottom-20 right-2 sm:bottom-6 sm:right-2 md:bottom-20 md:right-12 z-40 group"
+      className="fixed bottom-20 right-2 sm:bottom-6 sm:right-2 md:bottom-20 md:right-12 z-30 group"
       aria-label="Go to top"
     >
       {/* Outer glow effect */}
@@ -186,6 +189,9 @@ const UUIDPortfolioPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isValidating, setIsValidating] = useState(true);
   const [currentUUID, setCurrentUUID] = useState<string>("");
+  
+  // AI Assistant state tracking
+  const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
 
   useEffect(() => {
     const validateAndSetUUID = () => {
@@ -257,7 +263,10 @@ const UUIDPortfolioPage = () => {
             isLoading ? "opacity-0" : "opacity-100"
           }`}
         >
-          <FloatingNav navItems={navItems} />
+          <FloatingNav
+            navItems={navItems}
+            hideWhenAIOpen={isAIAssistantOpen}
+          />
           <Hero />
           <Grid />
           <RecentProjects />
@@ -268,7 +277,7 @@ const UUIDPortfolioPage = () => {
         </div>
 
         {/* Go to Top Button */}
-        {!isLoading && <GoToTopButton />}
+        {!isLoading && <GoToTopButton hideWhenAIOpen={isAIAssistantOpen} />}
 
         {/* Enhanced AI Assistant with System Isolation and Error Boundary */}
         <AIErrorBoundary
@@ -277,11 +286,12 @@ const UUIDPortfolioPage = () => {
             console.error('Error Info:', errorInfo);
           }}
         >
-          <EnhancedAIAssistant
+          <EnterpriseAIAssistant
             isPortfolioLoaded={!isLoading}
             onAssistantStateChange={(state) => {
-              // Optional: Handle assistant state changes
+              // Handle assistant state changes for navbar visibility
               console.log('Enhanced Assistant state changed:', state);
+              setIsAIAssistantOpen(state.isVisible && !state.isMinimized);
             }}
           />
         </AIErrorBoundary>
