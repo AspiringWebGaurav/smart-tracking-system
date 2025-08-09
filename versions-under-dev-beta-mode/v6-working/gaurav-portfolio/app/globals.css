@@ -2,6 +2,264 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Enhanced Ban Page Styles */
+.bg-grid-white\/\[0\.02\] {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+}
+
+/* Animation delays for enhanced loading */
+.animation-delay-150 {
+  animation-delay: 150ms;
+}
+
+.animation-delay-300 {
+  animation-delay: 300ms;
+}
+
+.animation-delay-450 {
+  animation-delay: 450ms;
+}
+
+/* Fade in up animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+/* Pulse glow effect */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 30px rgba(59, 130, 246, 0.6);
+  }
+}
+
+.pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* Enhanced backdrop blur */
+.backdrop-blur-xl {
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+
+/* Custom scrollbar for enhanced UI */
+.enhanced-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.enhanced-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.1);
+  border-radius: 3px;
+}
+
+.enhanced-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 3px;
+}
+
+.enhanced-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.5);
+}
+
+/* Gradient text effect */
+.gradient-text {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Enhanced button hover effects */
+.enhanced-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.enhanced-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.enhanced-button:hover::before {
+  left: 100%;
+}
+
+/* Policy reference display styling */
+.policy-reference {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+/* Status indicator animations */
+@keyframes statusPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+.status-pulse {
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+/* Enhanced card hover effects */
+.enhanced-card {
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.enhanced-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.enhanced-card:hover::after {
+  opacity: 1;
+}
+
+.enhanced-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Responsive design helpers */
+@media (max-width: 768px) {
+  .enhanced-ban-container {
+    padding: 0.75rem;
+  }
+  
+  .policy-reference {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+  
+  /* Mobile-specific ban page optimizations */
+  .mobile-ban-grid {
+    gap: 0.75rem;
+  }
+  
+  .mobile-ban-card {
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+  }
+  
+  .mobile-ban-text {
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+  
+  .mobile-ban-button {
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .enhanced-ban-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .enhanced-ban-header > div:first-child {
+    margin-bottom: 1rem;
+  }
+  
+  /* Extra small mobile optimizations */
+  .xs-mobile-padding {
+    padding: 0.5rem;
+  }
+  
+  .xs-mobile-text {
+    font-size: 0.75rem;
+  }
+  
+  .xs-mobile-spacing {
+    gap: 0.5rem;
+  }
+}
+
+/* Mobile viewport height optimization */
+@media (max-height: 700px) and (max-width: 768px) {
+  .mobile-ban-compact {
+    padding: 0.5rem;
+  }
+  
+  .mobile-ban-compact .mobile-ban-card {
+    padding: 0.5rem;
+  }
+  
+  .mobile-ban-compact .mobile-ban-text {
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+}
+
+/* Landscape mobile optimization */
+@media (max-height: 500px) and (orientation: landscape) {
+  .landscape-mobile-ban {
+    padding: 0.25rem;
+  }
+  
+  .landscape-mobile-ban .mobile-ban-card {
+    padding: 0.5rem;
+  }
+  
+  .landscape-mobile-ban h1 {
+    font-size: 1.25rem;
+  }
+  
+  .landscape-mobile-ban h3 {
+    font-size: 1rem;
+  }
+}
+
+/* Touch-friendly button sizing */
+@media (pointer: coarse) {
+  .touch-button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .touch-button-large {
+    min-height: 48px;
+    padding: 0.75rem 1.5rem;
+  }
+}
+
 /* Enhanced Toast System Styles */
 .toast-container {
   z-index: 9999;

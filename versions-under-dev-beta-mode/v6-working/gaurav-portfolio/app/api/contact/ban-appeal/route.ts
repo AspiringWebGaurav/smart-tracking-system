@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase-admin";
+import { requireFirebaseAdmin } from "@/lib/firebase-admin";
 
 interface BanAppealData {
   name: string;
@@ -8,13 +8,14 @@ interface BanAppealData {
   message: string;
   uuid: string;
   banReason: string;
+  policyReference?: string | null;
   timestamp: string;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body: BanAppealData = await req.json();
-    const { name, email, subject, message, uuid, banReason, timestamp } = body;
+    const { name, email, subject, message, uuid, banReason, policyReference, timestamp } = body;
 
     // Validate required fields
     if (!name || !email || !subject || !message || !uuid) {
@@ -41,6 +42,7 @@ export async function POST(req: NextRequest) {
       message,
       uuid,
       banReason,
+      policyReference: policyReference || null,
       timestamp,
       status: "pending", // pending, reviewed, approved, rejected
       submittedAt: new Date().toISOString(),
@@ -55,6 +57,7 @@ export async function POST(req: NextRequest) {
     };
 
     // Save to appeals collection
+    const db = requireFirebaseAdmin();
     const appealRef = await db.collection("ban_appeals").add(appealData);
 
     console.log("✅ Ban appeal submitted:", appealRef.id);
@@ -94,7 +97,8 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "20");
     const offset = parseInt(searchParams.get("offset") || "0");
 
-    let query: any = db.collection("ban_appeals");
+    const db = requireFirebaseAdmin();
+    let query = db.collection("ban_appeals");
 
     // Filter by status if provided
     if (
@@ -170,6 +174,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
+    const db = requireFirebaseAdmin();
     const appealRef = db.collection("ban_appeals").doc(appealId);
     const appealDoc = await appealRef.get();
 
@@ -243,6 +248,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Check if appeal exists
+    const db = requireFirebaseAdmin();
     const appealRef = db.collection("ban_appeals").doc(appealId);
     const appealDoc = await appealRef.get();
 

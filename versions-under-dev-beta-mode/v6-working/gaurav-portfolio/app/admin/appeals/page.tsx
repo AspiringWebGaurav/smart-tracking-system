@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import { ThemeProvider } from "@/components/admin/ThemeProvider";
 import UnifiedNavbar from "@/components/admin/UnifiedNavbar";
+import { formatPolicyReferenceForDisplay } from "@/utils/policyReference";
 
 interface BanAppeal {
   id: string;
@@ -25,6 +26,7 @@ interface BanAppeal {
   message: string;
   uuid: string;
   banReason: string;
+  policyReference?: string;
   status: "pending" | "reviewed" | "approved" | "rejected";
   submittedAt: string;
   reviewedAt?: string;
@@ -297,9 +299,19 @@ export default function AppealsPage() {
                         <p className="text-sm text-slate-600">
                           From: {appeal.name} ({appeal.email})
                         </p>
-                        <p className="text-sm text-slate-500">
-                          UUID: {appeal.uuid} • Submitted: {new Date(appeal.submittedAt).toLocaleString()}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+                          <span>UUID: {appeal.uuid}</span>
+                          {appeal.policyReference && (
+                            <>
+                              <span>•</span>
+                              <span className="font-mono bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
+                                Policy: {formatPolicyReferenceForDisplay(appeal.policyReference)}
+                              </span>
+                            </>
+                          )}
+                          <span>•</span>
+                          <span>Submitted: {new Date(appeal.submittedAt).toLocaleString()}</span>
+                        </div>
                       </div>
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase-admin";
+import { requireFirebaseAdmin } from "@/lib/firebase-admin";
 
 // Create a new ban record
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { uuid, reason, customReason, adminId, timestamp, isActive } = body;
+    const { uuid, reason, customReason, policyReference, adminId, timestamp, isActive } = body;
 
     if (!uuid || !reason || !adminId) {
       return NextResponse.json(
@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
       uuid,
       reason,
       customReason: customReason || null,
+      policyReference: policyReference || null,
       adminId,
       timestamp: timestamp || new Date().toISOString(),
       isActive: isActive !== undefined ? isActive : true,
@@ -26,6 +27,7 @@ export async function POST(req: NextRequest) {
     };
 
     // Store in /bans/{uuid} collection
+    const db = requireFirebaseAdmin();
     await db.collection("bans").doc(uuid).set(banData);
     
     console.log(`✅ Ban record created for UUID: ${uuid}`);
@@ -58,7 +60,8 @@ export async function GET(req: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0');
     const activeOnly = searchParams.get('activeOnly') === 'true';
 
-    let query: any = db.collection("bans");
+    const db = requireFirebaseAdmin();
+    let query = db.collection("bans");
 
     // Filter by UUID if provided
     if (uuid) {
@@ -147,6 +150,7 @@ export async function PUT(req: NextRequest) {
       );
     }
 
+    const db = requireFirebaseAdmin();
     const banRef = db.collection("bans").doc(uuid);
     const banDoc = await banRef.get();
 
@@ -204,6 +208,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
+    const db = requireFirebaseAdmin();
     const banRef = db.collection("bans").doc(uuid);
     const banDoc = await banRef.get();
 

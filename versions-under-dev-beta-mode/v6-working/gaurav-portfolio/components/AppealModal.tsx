@@ -8,6 +8,7 @@ interface AppealModalProps {
   onClose: () => void;
   uuid: string;
   banReason: string;
+  policyReference?: string;
 }
 
 interface AppealFormData {
@@ -17,7 +18,7 @@ interface AppealFormData {
   message: string;
 }
 
-export default function AppealModal({ isOpen, onClose, uuid, banReason }: AppealModalProps) {
+export default function AppealModal({ isOpen, onClose, uuid, banReason, policyReference }: AppealModalProps) {
   const [formData, setFormData] = useState<AppealFormData>({
     name: '',
     email: '',
@@ -75,6 +76,7 @@ export default function AppealModal({ isOpen, onClose, uuid, banReason }: Appeal
           ...formData,
           uuid,
           banReason,
+          policyReference,
           timestamp: new Date().toISOString()
         }),
       });

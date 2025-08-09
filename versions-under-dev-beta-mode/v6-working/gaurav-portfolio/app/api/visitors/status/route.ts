@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { uuid, status, banReason, adminId } = body;
+    const { uuid, status, banReason, policyReference, adminId } = body;
 
     if (!uuid || !status) {
       return NextResponse.json(
@@ -147,11 +147,13 @@ export async function POST(req: NextRequest) {
     if (status === 'banned') {
       updateData.banTimestamp = new Date().toISOString();
       updateData.banReason = banReason || 'Violation of terms';
+      updateData.policyReference = policyReference || null;
       updateData.unbanTimestamp = null;
     } else if (status === 'active') {
       updateData.unbanTimestamp = new Date().toISOString();
       updateData.banReason = null;
       updateData.banTimestamp = null;
+      updateData.policyReference = null;
     }
 
     await visitorRef.update(updateData);

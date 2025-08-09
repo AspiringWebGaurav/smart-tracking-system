@@ -16,7 +16,9 @@
       {
         "ignore": [
           "scrollbar-width",
-          "scrollbar-width: none"
+          "scrollbar-width: none",
+          "mask-composite",
+          "mask-composite: exclude"
         ]
       }
     ],

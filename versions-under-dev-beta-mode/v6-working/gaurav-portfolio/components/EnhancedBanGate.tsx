@@ -81,7 +81,8 @@ export default function EnhancedBanGate({ children, uuid }: BanGateProps) {
         
         // Use Next.js router for dynamic redirection (works in both dev and production)
         const banReason = encodeURIComponent(data.banReason || "Policy violation");
-        router.push(`/${visitorUUID}/ban?reason=${banReason}`);
+        const policyRef = data.policyReference || "";
+        router.push(`/${visitorUUID}/ban?reason=${banReason}&policyRef=${policyRef}`);
         return;
       }
 
@@ -153,7 +154,8 @@ export default function EnhancedBanGate({ children, uuid }: BanGateProps) {
                 
                 setTimeout(() => {
                   const banReason = encodeURIComponent(data.banReason || 'Policy violation');
-                  router.push(`/${visitorUUID}/ban?reason=${banReason}`);
+                  const policyRef = data.policyReference || "";
+                  router.push(`/${visitorUUID}/ban?reason=${banReason}&policyRef=${policyRef}`);
                 }, 1500);
               });
             }

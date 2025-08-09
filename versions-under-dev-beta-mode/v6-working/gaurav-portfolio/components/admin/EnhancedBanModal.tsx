@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { showSuccessToast, showErrorToast } from '@/components/ToastSystem';
+import { generatePolicyReference } from '@/utils/policyReference';
 
 interface EnhancedBanModalProps {
   isOpen: boolean;
@@ -41,12 +42,15 @@ export default function EnhancedBanModal({ isOpen, onClose, selectedUUIDs, onBan
     setIsSubmitting(true);
 
     try {
-      const finalReason = selectedReason === 'custom' 
+      const finalReason = selectedReason === 'custom'
         ? customReason.trim()
         : BAN_REASONS.find(r => r.value === selectedReason)?.label || 'Policy violation';
 
       // Ban each UUID and store in /bans/{uuid} collection
       const banPromises = selectedUUIDs.map(async (uuid) => {
+        // Generate unique policy reference for this ban
+        const policyReference = generatePolicyReference();
+
         // Update visitor status
         const statusResponse = await fetch('/api/visitors/status', {
           method: 'POST',
@@ -56,6 +60,7 @@ export default function EnhancedBanModal({ isOpen, onClose, selectedUUIDs, onBan
             uuid,
             status: 'banned',
             banReason: finalReason,
+            policyReference,
             adminId: 'gaurav'
           })
         });
@@ -73,6 +78,7 @@ export default function EnhancedBanModal({ isOpen, onClose, selectedUUIDs, onBan
             uuid,
             reason: selectedReason,
             customReason: selectedReason === 'custom' ? customReason.trim() : null,
+            policyReference,
             adminId: 'gaurav',
             timestamp: new Date().toISOString(),
             isActive: true
