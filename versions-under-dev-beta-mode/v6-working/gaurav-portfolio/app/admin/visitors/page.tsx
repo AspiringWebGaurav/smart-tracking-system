@@ -14,8 +14,10 @@ import { useEnhancedLoading } from "@/hooks/useEnhancedLoading";
 import { useSmartEmptyState } from "@/hooks/useSmartEmptyState";
 import { useDebounce } from "@/hooks/usePerformanceOptimization";
 import EnhancedBanModal from "@/components/admin/EnhancedBanModal";
+import BanUnbanConfirmModal from "@/components/admin/BanUnbanConfirmModal";
 import DeleteConfirmModal from "@/components/admin/DeleteConfirmModal";
 import AdminNotesModal from "@/components/admin/AdminNotesModal";
+import EditBanCategoryModal from "@/components/admin/EditBanCategoryModal";
 import { ThemeProvider } from "@/components/admin/ThemeProvider";
 import UnifiedNavbar from "@/components/admin/UnifiedNavbar";
 import { VisitorTableSkeleton } from "@/components/admin/skeletons/VisitorTableSkeleton";
@@ -40,6 +42,8 @@ interface Visitor {
   banReason?: string;
   banTimestamp?: string;
   unbanTimestamp?: string;
+  policyReference?: string;
+  banCategory?: string;
   isOnline?: boolean;
   lastSeen?: string;
   sessionStart?: string;
@@ -105,8 +109,10 @@ export default function VisitorsPage() {
 
   // Modals
   const [showBanModal, setShowBanModal] = useState(false);
+  const [showBanUnbanModal, setShowBanUnbanModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(false);
+  const [showEditCategoryModal, setShowEditCategoryModal] = useState(false);
   const [deleteConfig, setDeleteConfig] = useState<{
     type: "visitor";
     items: string[];
@@ -116,6 +122,19 @@ export default function VisitorsPage() {
   const [notesModalData, setNotesModalData] = useState<{
     uuid: string;
     currentNotes?: string;
+  } | null>(null);
+  const [banUnbanModalData, setBanUnbanModalData] = useState<{
+    action: 'ban' | 'unban';
+    visitor: {
+      uuid: string;
+      status: string;
+      banReason?: string;
+      policyReference?: string;
+    };
+  } | null>(null);
+  const [editCategoryModalData, setEditCategoryModalData] = useState<{
+    uuid: string;
+    currentCategory?: string;
   } | null>(null);
 
   // Client-side filtering (much faster than API calls)
@@ -244,30 +263,24 @@ export default function VisitorsPage() {
     });
   };
 
-  const handleSingleAction = async (uuid: string, action: "ban" | "unban", reason?: string) => {
-    try {
-      const response = await fetch("/api/visitors/status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          uuid,
-          status: action === "ban" ? "banned" : "active",
-          banReason: reason || `${action} by admin`,
-          adminId: "gaurav",
-        }),
-      });
-
-      if (response.ok) {
-        showSuccessToast(`Visitor ${action}ned successfully`);
-        // No need to call fetchVisitors() - Firebase listener will update automatically
-      } else {
-        throw new Error(`Failed to ${action} visitor`);
-      }
-    } catch (error) {
-      console.error(`Error ${action}ning visitor:`, error);
-      showErrorToast(`Failed to ${action} visitor`);
+  const handleSingleAction = (uuid: string, action: "ban" | "unban") => {
+    // Find the visitor data for the modal
+    const visitor = filteredVisitors.find(v => v.uuid === uuid);
+    if (!visitor) {
+      showErrorToast("Visitor not found");
+      return;
     }
+
+    setBanUnbanModalData({
+      action,
+      visitor: {
+        uuid: visitor.uuid,
+        status: visitor.status,
+        banReason: visitor.banReason,
+        policyReference: visitor.policyReference
+      }
+    });
+    setShowBanUnbanModal(true);
   };
 
   const handleDeleteVisitors = (uuids: string[]) => {
@@ -327,6 +340,33 @@ export default function VisitorsPage() {
   const handleBanComplete = () => {
     setSelectedVisitors(new Set());
     // No need to call fetchVisitors() - Firebase listener will update automatically
+  };
+
+  const handleBanUnbanComplete = () => {
+    // No need to call fetchVisitors() - Firebase listener will update automatically
+    setShowBanUnbanModal(false);
+    setBanUnbanModalData(null);
+  };
+
+  const handleEditCategory = (uuid: string) => {
+    // Find the visitor to get current category
+    const visitor = filteredVisitors.find(v => v.uuid === uuid);
+    if (!visitor) {
+      showErrorToast("Visitor not found");
+      return;
+    }
+
+    setEditCategoryModalData({
+      uuid: visitor.uuid,
+      currentCategory: visitor.banCategory || 'normal'
+    });
+    setShowEditCategoryModal(true);
+  };
+
+  const handleEditCategoryComplete = () => {
+    // No need to call fetchVisitors() - Firebase listener will update automatically
+    setShowEditCategoryModal(false);
+    setEditCategoryModalData(null);
   };
 
   const toggleVisitorSelection = (uuid: string) => {
@@ -724,35 +764,47 @@ export default function VisitorsPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex space-x-2">
-                            {visitor.status === "active" ? (
+                        <td className="px-6 py-4 min-w-[200px]">
+                          <div className="flex flex-col space-y-1">
+                            <div className="flex space-x-1">
+                              {visitor.status === "active" ? (
+                                <button
+                                  onClick={() => handleSingleAction(visitor.uuid, "ban")}
+                                  className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors"
+                                >
+                                  Ban
+                                </button>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => handleSingleAction(visitor.uuid, "unban")}
+                                    className="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded text-xs transition-colors"
+                                  >
+                                    Unban
+                                  </button>
+                                  <button
+                                    onClick={() => handleEditCategory(visitor.uuid)}
+                                    className="bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs transition-colors"
+                                  >
+                                    Edit Category
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                            <div className="flex space-x-1">
                               <button
-                                onClick={() => handleSingleAction(visitor.uuid, "ban", "Banned by admin")}
-                                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs transition-colors"
+                                onClick={() => handleEditNotes(visitor.uuid, visitor.adminNotes)}
+                                className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs transition-colors"
                               >
-                                Ban
+                                Notes
                               </button>
-                            ) : (
                               <button
-                                onClick={() => handleSingleAction(visitor.uuid, "unban")}
-                                className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded text-xs transition-colors"
+                                onClick={() => handleDeleteVisitors([visitor.uuid])}
+                                className="bg-slate-500 hover:bg-slate-600 text-white px-2 py-1 rounded text-xs transition-colors"
                               >
-                                Unban
+                                Delete
                               </button>
-                            )}
-                            <button
-                              onClick={() => handleEditNotes(visitor.uuid, visitor.adminNotes)}
-                              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition-colors"
-                            >
-                              Notes
-                            </button>
-                            <button
-                              onClick={() => handleDeleteVisitors([visitor.uuid])}
-                              className="bg-slate-500 hover:bg-slate-600 text-white px-3 py-1 rounded text-xs transition-colors"
-                            >
-                              Delete
-                            </button>
+                            </div>
                           </div>
                         </td>
                       </tr>
@@ -797,6 +849,32 @@ export default function VisitorsPage() {
             visitorUuid={notesModalData.uuid}
             currentNotes={notesModalData.currentNotes}
             onNotesUpdated={handleNotesUpdated}
+          />
+        )}
+
+        {banUnbanModalData && (
+          <BanUnbanConfirmModal
+            isOpen={showBanUnbanModal}
+            onClose={() => {
+              setShowBanUnbanModal(false);
+              setBanUnbanModalData(null);
+            }}
+            action={banUnbanModalData.action}
+            visitor={banUnbanModalData.visitor}
+            onActionComplete={handleBanUnbanComplete}
+          />
+        )}
+
+        {editCategoryModalData && (
+          <EditBanCategoryModal
+            isOpen={showEditCategoryModal}
+            onClose={() => {
+              setShowEditCategoryModal(false);
+              setEditCategoryModalData(null);
+            }}
+            uuid={editCategoryModalData.uuid}
+            currentCategory={editCategoryModalData.currentCategory as any}
+            onCategoryUpdated={handleEditCategoryComplete}
           />
         )}
       </div>

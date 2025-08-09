@@ -5,7 +5,7 @@ import { requireFirebaseAdmin } from "@/lib/firebase-admin";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { uuid, reason, customReason, policyReference, adminId, timestamp, isActive } = body;
+    const { uuid, reason, customReason, banCategory, policyReference, adminId, timestamp, isActive } = body;
 
     if (!uuid || !reason || !adminId) {
       return NextResponse.json(
@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
       uuid,
       reason,
       customReason: customReason || null,
+      banCategory: banCategory || 'normal',
       policyReference: policyReference || null,
       adminId,
       timestamp: timestamp || new Date().toISOString(),
@@ -171,6 +172,16 @@ export async function PUT(req: NextRequest) {
 
     if (adminId) {
       updateData.lastModifiedBy = adminId;
+    }
+
+    // Handle ban category updates
+    if (body.banCategory) {
+      updateData.banCategory = body.banCategory;
+    }
+
+    // Handle policy reference updates
+    if (body.policyReference) {
+      updateData.policyReference = body.policyReference;
     }
 
     await banRef.update(updateData);

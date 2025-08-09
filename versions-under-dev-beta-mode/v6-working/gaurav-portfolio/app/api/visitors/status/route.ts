@@ -29,6 +29,8 @@ export async function GET(req: NextRequest) {
           uuid,
           banReason: null,
           banTimestamp: null,
+          banCategory: null,
+          policyReference: null,
           note: "Firebase Admin not configured - defaulting to active status"
         },
         { status: 200 }
@@ -46,6 +48,8 @@ export async function GET(req: NextRequest) {
           uuid,
           banReason: null,
           banTimestamp: null,
+          banCategory: null,
+          policyReference: null,
           note: "New visitor - document not found"
         },
         { status: 200 }
@@ -66,7 +70,9 @@ export async function GET(req: NextRequest) {
         status,
         uuid,
         banReason: visitorData?.banReason,
-        banTimestamp: visitorData?.banTimestamp
+        banTimestamp: visitorData?.banTimestamp,
+        banCategory: visitorData?.banCategory || 'normal',
+        policyReference: visitorData?.policyReference || null
       },
       { status: 200 }
     );
@@ -84,6 +90,8 @@ export async function GET(req: NextRequest) {
         uuid: new URL(req.url).searchParams.get('uuid'),
         banReason: null,
         banTimestamp: null,
+        banCategory: null,
+        policyReference: null,
         error: "Service temporarily unavailable - defaulting to active status"
       },
       { status: 200 }
@@ -95,7 +103,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { uuid, status, banReason, policyReference, adminId } = body;
+    const { uuid, status, banReason, banCategory, policyReference, adminId } = body;
 
     if (!uuid || !status) {
       return NextResponse.json(
@@ -147,13 +155,25 @@ export async function POST(req: NextRequest) {
     if (status === 'banned') {
       updateData.banTimestamp = new Date().toISOString();
       updateData.banReason = banReason || 'Violation of terms';
+      updateData.banCategory = banCategory || 'normal';
       updateData.policyReference = policyReference || null;
       updateData.unbanTimestamp = null;
+      
+      // Add category history
+      updateData.banCategoryHistory = [{
+        category: banCategory || 'normal',
+        timestamp: new Date().toISOString(),
+        adminId: adminId || 'system',
+        reason: banReason || 'Violation of terms',
+        previousCategory: null
+      }];
     } else if (status === 'active') {
       updateData.unbanTimestamp = new Date().toISOString();
       updateData.banReason = null;
+      updateData.banCategory = null;
       updateData.banTimestamp = null;
       updateData.policyReference = null;
+      updateData.banCategoryHistory = null;
     }
 
     await visitorRef.update(updateData);

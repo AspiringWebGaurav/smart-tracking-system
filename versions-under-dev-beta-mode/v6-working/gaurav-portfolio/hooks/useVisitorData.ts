@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useOptimizedFirebaseListener } from './useOptimizedFirebaseListener';
 
 interface Visitor {
+  [x: string]: string | undefined;
   id: string;
   uuid: string;
   status: "active" | "banned";
