@@ -15,7 +15,8 @@ import Clients from "@/components/Clients";
 import Experience from "@/components/Experience";
 import Approach from "@/components/Approach";
 import Footer from "@/components/Footer";
-import AIAssistant from "@/components/ai-assistant/AIAssistant";
+import EnhancedAIAssistant from "@/components/ai-assistant/EnhancedAIAssistant";
+import AIErrorBoundary from "@/components/ai-assistant/AIErrorBoundary";
 import { silentLogger, prodLogger } from '@/utils/secureLogger';
 
 // Unique Circular Loader Component
@@ -269,14 +270,21 @@ const UUIDPortfolioPage = () => {
         {/* Go to Top Button */}
         {!isLoading && <GoToTopButton />}
 
-        {/* AI Assistant */}
-        <AIAssistant
-          isPortfolioLoaded={!isLoading}
-          onAssistantStateChange={(state) => {
-            // Optional: Handle assistant state changes
-            console.log('Assistant state changed:', state);
+        {/* Enhanced AI Assistant with System Isolation and Error Boundary */}
+        <AIErrorBoundary
+          onError={(error, errorInfo) => {
+            console.error('AI Assistant Error:', error);
+            console.error('Error Info:', errorInfo);
           }}
-        />
+        >
+          <EnhancedAIAssistant
+            isPortfolioLoaded={!isLoading}
+            onAssistantStateChange={(state) => {
+              // Optional: Handle assistant state changes
+              console.log('Enhanced Assistant state changed:', state);
+            }}
+          />
+        </AIErrorBoundary>
       </main>
     </EnhancedBanGate>
   );

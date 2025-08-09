@@ -13,34 +13,130 @@ import {
   getDoc
 } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { prodLogger, devLogger } from '@/utils/secureLogger';
 
-// GET - Fetch all questions
+// Enhanced error handling and retry logic
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Enhanced Firebase operation with retry logic
+const withRetry = async <T>(
+  operation: () => Promise<T>,
+  operationName: string,
+  maxRetries: number = MAX_RETRIES
+): Promise<T> => {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      devLogger.debug(`${operationName} attempt ${attempt}/${maxRetries}`);
+      const result = await operation();
+      
+      if (attempt > 1) {
+        devLogger.debug(`${operationName} succeeded on attempt ${attempt}`);
+      }
+      
+      return result;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Unknown error');
+      
+      devLogger.warn(`${operationName} attempt ${attempt} failed`, {
+        error: lastError.message,
+        attempt,
+        maxRetries
+      });
+
+      // If it's the last attempt, don't wait
+      if (attempt === maxRetries) {
+        break;
+      }
+
+      // Wait before retrying with exponential backoff
+      const delay = RETRY_DELAY * Math.pow(2, attempt - 1);
+      await sleep(delay);
+    }
+  }
+  
+  throw lastError || new Error(`${operationName} failed after ${maxRetries} attempts`);
+};
+
+// GET - Fetch all questions with enhanced error handling
 export async function GET() {
+  const startTime = Date.now();
+  
   try {
-    const questionsRef = collection(db, 'ai_questions');
-    const q = query(questionsRef, orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
-    
-    const questions = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-      updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString()
-    }));
+    devLogger.debug('Fetching AI questions from Firebase');
+
+    // Check if Firebase is properly initialized
+    if (!db) {
+      prodLogger.error('Firebase database not initialized');
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Database service unavailable. Please try again later.',
+          fallback: true
+        },
+        { status: 503 }
+      );
+    }
+
+    const questions = await withRetry(async () => {
+      const questionsRef = collection(db, 'ai_questions');
+      const q = query(questionsRef, orderBy('createdAt', 'desc'));
+      const snapshot = await getDocs(q);
+      
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+          updatedAt: data.updatedAt?.toDate?.()?.toISOString()
+        };
+      });
+    }, 'Firebase questions fetch');
+
+    devLogger.debug('Successfully fetched questions', {
+      count: questions.length,
+      duration: Date.now() - startTime
+    });
 
     return NextResponse.json({
       success: true,
       data: {
         questions,
-        total: questions.length
+        total: questions.length,
+        source: 'firebase',
+        duration: Date.now() - startTime
       }
     });
 
   } catch (error) {
-    console.error('Error fetching questions:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    prodLogger.error('Failed to fetch questions after retries', {
+      error: errorMessage,
+      duration: Date.now() - startTime
+    });
+
+    // Check if it's a Firebase-specific error
+    const isFirebaseError = errorMessage.includes('Firebase') ||
+                           errorMessage.includes('firestore') ||
+                           errorMessage.includes('permission-denied') ||
+                           errorMessage.includes('unavailable');
+
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch questions' },
-      { status: 500 }
+      {
+        success: false,
+        error: isFirebaseError
+          ? 'Database service is temporarily unavailable. Please try again later.'
+          : 'Failed to load questions. Please try again later.',
+        fallback: true,
+        errorType: isFirebaseError ? 'firebase' : 'unknown'
+      },
+      { status: 503 }
     );
   }
 }
